@@ -74,46 +74,84 @@ async function obtenerReservas() {
 
 
 function actualizarDashboard() {
-    const act = document.getElementById("dash-activas");
-    const ing = document.getElementById("dash-ingresos");
-    if (act) act.innerText = todasLasReservas.length;
-    let tot = todasLasReservas.reduce((s, r) => s + (Number(r.Total_Reserva) || 0), 0);
-    if (ing) ing.innerText = "$" + tot.toLocaleString('es-MX');
-}
+    const totalReservasEl = document.getElementById("dash-total-reservas");
+    const ingresosTotalesEl = document.getElementById("dash-ingresos-totales");
+    const saldosPendientesEl = document.getElementById("dash-saldos-pendientes");
 
-function renderizarCards(lista) {
-    const contenedor = document.getElementById("contenedor-cards");
-    if (!contenedor) return;
-    contenedor.innerHTML = "";
-    if (!lista || lista.length === 0) {
-        contenedor.innerHTML = `<p style="color:#9ca3af; text-align:center; padding:20px;">No hay reservas.</p>`;
+    // 🛡️ SEGURIDAD: Si aún no se descargan las reservas, salimos de forma segura sin romper la página
+    if (!todasLasReservas || todasLasReservas.length === 0) {
+        if (totalReservasEl) totalReservasEl.innerText = "0";
+        if (ingresosTotalesEl) ingresosTotalesEl.innerText = "$0.00";
+        if (saldosPendientesEl) saldosPendientesEl.innerText = "$0.00";
         return;
     }
-    lista.forEach(res => {
+
+    let ingresos = 0;
+    let pendientes = 0;
+
+    todasLasReservas.forEach(r => {
+        const total = parseFloat(r.Total_Reserva) || 0;
+        const anticipo = parseFloat(r.Anticipo) || 0;
+        const pago = parseFloat(r.Pago) || 0;
+
+        ingresos += (anticipo + pago);
+        pendientes += (total - anticipo - pago);
+    });
+
+    if (totalReservasEl) totalReservasEl.innerText = todasLasReservas.length;
+    if (ingresosTotalesEl) ingresosTotalesEl.innerText = `$${ingresos.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+    if (saldosPendientesEl) saldosPendientesEl.innerText = `$${pendientes.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+}
+
+function renderizarCards(reservas) {
+    const contenedor = document.getElementById("contenedor-cards");
+    if (!contenedor) return;
+
+    contenedor.innerHTML = "";
+
+    // 🛡️ SEGURIDAD: Si no hay datos todavía, mostramos un aviso limpio
+    if (!reservas || reservas.length === 0) {
+        contenedor.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservaciones desde Google Sheets...</p>`;
+        return;
+    }
+
+    reservas.forEach(r => {
         const card = document.createElement("div");
-        card.style = "background:white; padding:16px; border-radius:16px; border:1px solid #e5e7eb; margin-bottom:12px;";
+        card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3";
+        
+        const total = parseFloat(r.Total_Reserva) || 0;
+        const anticipo = parseFloat(r.Anticipo) || 0;
+        const pago = parseFloat(r.Pago) || 0;
+        const saldoPendiente = total - anticipo - pago;
+
+        // 🎨 OPCIÓN 3 INTEGRADA: Alerta visual si tiene saldo pendiente
+        let etiquetaSaldo = "";
+        if (saldoPendiente > 0) {
+            etiquetaSaldo = `<span class="px-2.5 py-1 text-xs font-bold bg-amber-50 text-amber-700 rounded-lg">⏳ Pendiente: $${saldoPendiente}</span>`;
+        } else {
+            etiquetaSaldo = `<span class="px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 rounded-lg">✅ Liquidado</span>`;
+        }
+
+        const fLlegada = r.Fecha_Llegada ? r.Fecha_Llegada.split("T")[0] : "---";
+        const fSalida = r.Fecha_Salida ? r.Fecha_Salida.split("T")[0] : "---";
+
         card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f3f4f6; padding-bottom:8px;">
+            <div class="flex justify-between items-start">
                 <div>
-                    <span style="font-family:monospace; font-weight:bold; background:#f3f4f6; padding:2px 6px; border-radius:4px; font-size:12px;">${res.Num_Reservacion || '---'}</span>
-                    <h3 style="font-size:16px; font-weight:bold; margin:6px 0 0 0;">${res.Nombre_Completo || '---'}</h3>
+                    <h4 class="font-bold text-gray-800 text-base">${r.Nombre_Completo}</h4>
+                    <p class="text-xs text-gray-400 mt-0.5">📱 ${r.Telefono || "Sin teléfono"}</p>
                 </div>
-                <span style="font-size:12px; background:#dbeafe; color:#1e40af; padding:4px 8px; border-radius:9999px;">Registrado</span>
+                ${etiquetaSaldo}
             </div>
-            <div style="display:grid; grid-template-cols:1fr 1fr; gap:8px; margin-top:8px;">
-                <div style="background:#f9fafb; padding:8px; border-radius:8px; font-size:12px;">
-                    <span style="color:#9ca3af; display:block;">📅 Llegada</span>
-                    <span style="font-weight:600;">${formatearFecha(res.Fecha_Llegada)}</span>
-                </div>
-                <div style="background:#f9fafb; padding:8px; border-radius:8px; font-size:12px;">
-                    <span style="color:#9ca3af; display:block;">📅 Salida</span>
-                    <span style="font-weight:600;">${formatearFecha(res.Fecha_Salida)}</span>
-                </div>
+            <div class="grid grid-cols-2 gap-2 py-2 border-y border-gray-50 text-xs text-gray-600">
+                <div>🛫 <span class="font-medium">Llegada:</span><br><span class="text-gray-800 font-bold">${fLlegada}</span></div>
+                <div>🛬 <span class="font-medium">Salida:</span><br><span class="text-gray-800 font-bold">${fSalida}</span></div>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:13px; margin-top:8px;">
-                <span style="color:#6b7280;">📞 ${res.Telefono || '---'}</span>
-                <span style="font-weight:bold;">$${(Number(res.Total_Reserva) || 0).toLocaleString('es-MX')}</span>
-            </div>`;
+            <div class="flex justify-between items-center text-xs pt-1">
+                <span class="text-gray-400 font-medium">Total de la estancia:</span>
+                <span class="text-gray-800 font-bold text-sm">$${total} MN</span>
+            </div>
+        `;
         contenedor.appendChild(card);
     });
 }
