@@ -40,16 +40,23 @@
         .day-busy { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; font-weight: bold; }
         .day-free { background-color: #ecfdf5; color: #059669; border-color: #a7f3d0; }
 
-/* 📊 ARREGLO NATIVO: DASHBOARD */
+/* 📊 ARREGLO RESPONSIVO: DASHBOARD (ADAPTABLE) */
 #vista-dashboard .grid {
     display: flex !important;
-    flex-direction: row !important;
+    flex-direction: column !important; /* Por defecto en vertical para celular 📱 */
     gap: 16px !important;
-    justify-content: space-between;
 }
+
+/* 💻 Si la pantalla es grande (Computadora), se acomoda en horizontal automáticamente */
+@media (min-width: 768px) {
+    #vista-dashboard .grid {
+        flex-direction: row !important;
+        justify-content: space-between;
+    }
+}
+
 #vista-dashboard .bg-white {
     flex: 1 !important;
-    min-width: 250px;
     padding: 24px !important;
     border-radius: 16px !important;
     border: 1px solid #f3f4f6 !important;
