@@ -245,9 +245,21 @@ function verificarNocheOcupada(fecha) {
     });
 }
 
-// 🛠️ Función auxiliar para formatear fechas de YYYY-MM-DD a DD/MM/YYYY
+// 🛠️ Función corregida para limpiar fechas largas y dejarlas en formato DD/MM/AAAA
 function formatearFecha(f) {
     if (!f) return "--";
-    const partes = f.split("-");
-    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    
+    // Si viene la fecha larga con la letra "T" de Google Sheets, nos quedamos solo con la parte del año/mes/día
+    let fechaLimpia = f.split("T")[0];
+    
+    // Separamos el año, mes y día
+    const partes = fechaLimpia.split("-");
+    if (partes.length < 3) return f; // Si ya venía formateada por otra razón, la deja igual
+    
+    const año = partes[0];
+    const mes = partes[1];
+    const dia = partes[2];
+    
+    // Armamos el formato corto que necesitas
+    return `${dia}/${mes}/${año}`;
 }
