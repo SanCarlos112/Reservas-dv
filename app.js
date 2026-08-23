@@ -187,77 +187,85 @@ function verificarConflictoFechas(llegadaNueva, salidaNueva) {
 function renderizarCalendario() {
     const contenedor = document.getElementById("calendario-contenedor");
     const titulo = document.getElementById("calendario-mes-año");
-    if (!contenedor || !titulo) return;
+    if (!contenedor) return;
 
-    contenedor.innerHTML = "";
+    try {
+        contenedor.innerHTML = "";
 
-    const año = mesVisualizado.getFullYear();
-    const mes = mesVisualizado.getMonth();
-
-    const meses = [
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-    ];
-    titulo.innerText = `${meses[mes]} ${año}`;
-
-    const primerDiaSemana = new Date(año, mes, 1).getDay();
-    const diasEnMes = new Date(año, mes + 1, 0).getDate();
-
-    const celdasVacias = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
-    for (let i = 0; i < celdasVacias; i++) {
-        const divVacio = document.createElement("div");
-        divVacio.className = "p-2 border bg-gray-50 text-transparent select-none";
-        divVacio.innerText = "-";
-        contenedor.appendChild(divVacio);
-    }
-
-    for (let i = 1; i <= diasEnMes; i++) {
-        const diaDiv = document.createElement("div");
-        diaDiv.innerText = i;
-
-        const mesStr = String(mes + 1).padStart(2, '0');
-        const diaStr = String(i).padStart(2, '0');
-        const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
-
-        const reservaDelDia = obtenerReservaPorFecha(fechaCeldaStr);
-
-        if (reservaDelDia) {
-            diaDiv.className = "p-2 border text-center font-bold bg-red-100 text-red-700 rounded cursor-pointer hover:bg-red-200 transition-colors";
-            
-            diaDiv.onclick = () => {
-                // CORRECCIÓN DIRECTA: Se eliminaron las referencias a 'r'
-                const fLlegada = reservaDelDia.Fecha_Llegada ? reservaDelDia.Fecha_Llegada.split("T")[0] : "No definida";
-                const fSalida = reservaDelDia.Fecha_Salida ? reservaDelDia.Fecha_Salida.split("T")[0] : "No definida";
-
-                alert(`📌 DETALLES DE LA RESERVACIÓN
---------------------------------------------
-👤 Huésped: ${reservaDelDia.Nombre_Completo}
-📱 Teléfono: ${reservaDelDia.Telefono || "No registrado"}
-📅 Llegada: ${fLlegada}
-📅 Salida: ${fSalida}
-💵 Total: $${reservaDelDia.Total_Reserva} MN
-💰 Anticipo: $${reservaDelDia.Anticipo || 0} MN
-📝 Obs: ${reservaDelDia.Observaciones || "Ninguna"}`);
-            };
-        } else {
-            diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
-            
-            diaDiv.onclick = () => {
-                const formLlegada = document.getElementById("Fecha_Llegada");
-                if (formLlegada) {
-                    formLlegada.value = fechaCeldaStr;
-                    cambiarVista('formulario');
-                }
-            };
+        // Seguridad: Asegurar que mesVisualizado exista antes de usarlo
+        if (typeof mesVisualizado === "undefined" || !(mesVisualizado instanceof Date)) {
+            mesVisualizado = new Date();
         }
 
-        contenedor.appendChild(diaDiv);
+        const año = mesVisualizado.getFullYear();
+        const mes = mesVisualizado.getMonth();
+
+        const meses = [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ];
+        
+        if (titulo) {
+            titulo.innerText = `${meses[mes]} ${año}`;
+        }
+
+        const primerDiaSemana = new Date(año, mes, 1).getDay();
+        const diasEnMes = new Date(año, mes + 1, 0).getDate();
+
+        // Cuadrado de días (Lunes a Domingo)
+        const celdasVacias = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
+        for (let i = 0; i < celdasVacias; i++) {
+            const divVacio = document.createElement("div");
+            divVacio.className = "p-2 border bg-gray-50 text-transparent select-none";
+            divVacio.innerText = "-";
+            contenedor.appendChild(divVacio);
+        }
+
+        for (let i = 1; i <= diasEnMes; i++) {
+            const diaDiv = document.createElement("div");
+            diaDiv.innerText = i;
+
+            const mesStr = String(mes + 1).padStart(2, '0');
+            const diaStr = String(i).padStart(2, '0');
+            const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
+
+            // Seguridad extra: verificar si la función auxiliar existe
+            const reservaDelDia = (typeof obtenerReservaPorFecha === "function") 
+                ? obtenerReservaPorFecha(fechaCeldaStr) 
+                : null;
+
+            if (reservaDelDia) {
+                diaDiv.className = "p-2 border text-center font-bold bg-red-100 text-red-700 rounded cursor-pointer hover:bg-red-200 transition-colors";
+                
+                diaDiv.onclick = () => {
+                    const fLlegada = reservaDelDia.Fecha_Llegada ? String(reservaDelDia.Fecha_Llegada).split("T")[0] : "No definida";
+                    const fSalida = reservaDelDia.Fecha_Salida ? String(reservaDelDia.Fecha_Salida).split("T")[0] : "No definida";
+
+                    alert(`📌 DETALLES DE LA RESERVACIÓN\n--------------------------------------------\n👤 Huésped: ${reservaDelDia.Nombre_Completo || "Desconocido"}\n📱 Teléfono: ${reservaDelDia.Telefono || "No registrado"}\n📅 Llegada: ${fLlegada}\n📅 Salida: ${fSalida}\n💵 Total: $${reservaDelDia.Total_Reserva || 0} MN\n💰 Anticipo: $${reservaDelDia.Anticipo || 0} MN\n📝 Obs: ${reservaDelDia.Observaciones || "Ninguna"}`);
+                };
+            } else {
+                diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
+                
+                diaDiv.onclick = () => {
+                    const formLlegada = document.getElementById("Fecha_Llegada");
+                    if (formLlegada) {
+                        formLlegada.value = fechaCeldaStr;
+                        cambiarVista('formulario');
+                    }
+                };
+            }
+
+            contenedor.appendChild(diaDiv);
+        }
+    } catch (error Critico) {
+        console.error("Falla en renderizarCalendario:", errorCritico);
+        contenedor.innerHTML = `<p style="color:#dc2626; padding:20px; text-align:center;">⚠️ Error interno al dibujar el calendario: ${errorCritico.message}</p>`;
     }
 }
 
 
 
-// 🔑 RECUERDA AGREGAR ESTA FUNCIÓN AUXILIAR ABAJO EN TU APP.JS SI AÚN NO LA TIENES:
+// 🔑 RECUERDA AGREGAR ESTA FUNCIÓN AUXILIAR 
 function obtenerReservaPorFecha(fechaCalendarioStr) {
     if (!todasLasReservas || todasLasReservas.length === 0) return null;
 
