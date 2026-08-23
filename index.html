@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Reservaciones - DV</title>
+    <style>
+        /* 🎨 DISEÑO LOCAL GARANTIZADO (SIN DEPENDER DE INTERNET) */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 0; display: flex; flex-direction: column; min-h: 100vh; }
+        header { background-color: #2563eb; color: white; padding: 12px 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .badge { font-size: 12px; background-color: #1d4ed8; padding: 4px 8px; rounded-radius: 9999px; border: 1px solid #60a5fa; border-radius: 9999px; }
+        nav { background-color: white; border-bottom: 1px solid #e5e7eb; display: flex; position: sticky; top: 48px; z-index: 40; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        nav button { flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; cursor: pointer; }
+        nav button.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: bold; }
+        main { flex: 1; max-width: 500px; width: 100%; margin: 0 auto; padding: 16px; box-sizing: border-box; }
+        section { display: flex; flex-direction: column; gap: 16px; }
+        .hidden { display: none !important; }
+        .banner { background: linear-gradient(to right, #3b82f6, #4f46e5); color: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .grid-stats { display: grid; grid-template-cols: 1fr 1fr; gap: 12px; }
+        .card-stat { background-color: white; padding: 16px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .stat-label { color: #9ca3af; font-size: 11px; font-weight: 600; text-transform: uppercase; display: block; }
+        .stat-val { font-size: 24px; font-weight: bold; display: block; margin-top: 8px; }
+        .text-green { color: #10b981; }
+        .input-text { w-width: 100%; width: 100%; background-color: white; padding: 12px; border-radius: 12px; border: 1px solid #d1d5db; box-sizing: border-box; font-size: 14px; }
+        form { background-color: white; padding: 20px; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 12px; }
+        .grid-form { display: grid; grid-template-cols: 1fr 1fr; gap: 12px; border-top: 1px solid #f3f4f6; padding-top: 12px; }
+        label { font-size: 12px; font-weight: 500; color: #4b5563; display: block; margin-bottom: 4px; }
+        .btn-submit { background-color: #2563eb; color: white; border: none; font-weight: bold; padding: 14px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
+        .btn-submit:hover { background-color: #1d4ed8; }
+        .card-reserva { background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 12px; }
+        .card-header { display: flex; justify-content: space-between; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
+        .folio { font-family: monospace; font-weight: bold; background-color: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #4b5563; }
+        .grid-dates { display: grid; grid-template-cols: 1fr 1fr; gap: 8px; }
+        .date-box { background-color: #f9fafb; padding: 8px; border-radius: 8px; font-size: 12px; }
+        .date-label { color: #9ca3af; display: block; }
+        .date-val { font-weight: 600; color: #374151; }
+        .grid-days { display: grid; grid-template-cols: repeat(7, 1fr); gap: 6px; background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; text-align: center; font-size: 12px; }
+        .day-name { font-weight: bold; color: #9ca3af; padding-bottom: 6px; }
+        .day-box { padding: 8px 0; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .day-busy { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; font-weight: bold; }
+        .day-free { background-color: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+    </style>
+</head>
+<body>
+
+    <!-- 📱 BARRA SUPERIOR -->
+    <header>
+        <div>🏠 Portal DV</div>
+        <div class="badge">Equipo</div>
+    </header>
+
+    <!-- 🗺️ MENÚ DE MÓDULOS -->
+    <nav>
+        <button onclick="cambiarVista('dashboard')" id="btn-dashboard" class="active">Inicio</button>
+        <button onclick="cambiarVista('calendario')" id="btn-calendario">Calendario</button>
+        <button onclick="cambiarVista('lista')" id="btn-lista">Reservas</button>
+        <button onclick="cambiarVista('nuevo')" id="btn-nuevo">Agendar</button>
+    </nav>
+
+    <!-- 📦 CONTENEDOR PRINCIPAL -->
+    <main>
+
+        <!-- 🏢 VISTA 1: DASHBOARD -->
+        <section id="vista-dashboard">
+            <div class="banner">
+                <h2 style="margin:0; font-size: 20px;">¡Hola, equipo! 👋</h2>
+                <p style="margin:4px 0 0 0; font-size: 13px; opacity: 0.9;">Estado actual de su departamento vacacional.</p>
+            </div>
+            
+            <div class="grid-stats">
+                <div class="card-stat">
+                    <span class="stat-label">Reservas Activas</span>
+                    <span class="stat-val" id="dash-activas">--</span>
+                </div>
+                <div class="card-stat">
+                    <span class="stat-label">Total Ingresos</span>
+                    <span class="stat-val text-green" id="dash-ingresos">$--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📅 VISTA 2: CALENDARIO -->
+        <section id="vista-calendario" class="hidden">
+            <h2 style="font-size: 18px; margin: 0 0 4px 0;">📅 Disponibilidad por Noches</h2>
+            <div id="calendario-contenedor" style="display: grid; grid-template-cols: repeat(7, 1fr); gap: 6px; background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; text-align: center; font-size: 12px; min-height: 200px; width: 100%; box-sizing: border-box;"></div>
+                <!-- Se dibuja solo mediante el archivo app.js -->
+            </div>
+        </section>
+
+        <!-- 📑 VISTA 3: LISTA DE RESERVAS -->
+        <section id="vista-lista" class="hidden">
+            <input type="text" id="buscador" oninput="filtrarReservas()" placeholder="🔍 Buscar por nombre o teléfono..." class="input-text">
+            <div id="contenedor-cards" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Las Cards aparecerán aquí dinámicamente -->
+            </div>
+        </section>
+
+        <!-- ➕ VISTA 4: FORMULARIO AGENDAR -->
+        <section id="vista-nuevo" class="hidden">
+            <h2 style="font-size: 18px; margin: 0 0 4px 0;">📋 Nueva Reservación</h2>
+            <form id="form-reserva" onsubmit="guardarReserva(event)">
+                <div>
+                    <label>Nombre Completo *</label>
+                    <input type="text" id="Nombre_Completo" required class="input-text">
+                </div>
+                <div>
+                    <label>Teléfono móvil *</label>
+                    <input type="tel" id="Telefono" required class="input-text">
+                </div>
+
+                <div class="grid-form">
+                    <div>
+                        <label>Fecha Llegada *</label>
+                        <input type="date" id="Fecha_Llegada" required class="input-text">
+                    </div>
+                    <div>
+                        <label>Fecha Salida *</label>
+                        <input type="date" id="Fecha_Salida" required class="input-text">
+                    </div>
+                </div>
+
+                <div class="grid-form">
+                    <div>
+                        <label>Total Reserva ($)</label>
+                        <input type="number" id="Total_Reserva" class="input-text">
+                    </div>
+                    <div>
+                        <label>Anticipo ($)</label>
+                        <input type="number" id="Anticipo" class="input-text">
+                    </div>
+                    <div>
+                        <label>Fecha Anticipo</label>
+                        <input type="date" id="Fecha_Anticipo" class="input-text">
+                    </div>
+                    <div>
+                        <label>Liquidación / Pago ($)</label>
+                        <input type="number" id="Pago" class="input-text">
+                    </div>
+                    <div>
+                        <label>Fecha Pago Liq.</label>
+                        <input type="date" id="Fecha_Pago" class="input-text">
+                    </div>
+                    <div>
+                        <label>Pago Limpieza ($)</label>
+                        <input type="number" id="Pago_Limpieza" class="input-text">
+                    </div>
+                    <div>
+                        <label>Fecha Limpieza</label>
+                        <input type="date" id="Fecha_Limpieza" class="input-text">
+                    </div>
+                    <div>
+                        <label>Brazaletes ($)</label>
+                        <input type="number" id="Pago_Brazaletes" class="input-text">
+                    </div>
+                    <div>
+                        <label>Comisión Pagada ($)</label>
+                        <input type="number" id="Comision_Pagada" class="input-text">
+                    </div>
+                    <div>
+                        <label>Fecha Comisión</label>
+                        <input type="date" id="Fecha_Comision" class="input-text">
+                    </div>
+                </div>
+
+                <div>
+                    <label>Observaciones internas</label>
+                    <textarea id="Observaciones" rows="2" class="input-text" style="resize: none;"></textarea>
+                </div>
+                <button type="submit" class="btn-submit">Guardar Reservación</button>
+            </form>
+        </section>
+    </main>
+    <!-- Conector con el archivo de inteligencia -->
+    <script src="app.js"></script>
+</body>
+</html>
