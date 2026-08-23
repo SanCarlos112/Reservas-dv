@@ -183,6 +183,7 @@ function verificarConflictoFechas(llegadaNueva, salidaNueva) {
     });
 }
 
+//  FUNCIÓN renderizarCalendario...
 function renderizarCalendario() {
     const contenedor = document.getElementById("calendario-contenedor");
     const titulo = document.getElementById("calendario-mes-año");
@@ -224,8 +225,9 @@ function renderizarCalendario() {
             diaDiv.className = "p-2 border text-center font-bold bg-red-100 text-red-700 rounded cursor-pointer hover:bg-red-200 transition-colors";
             
             diaDiv.onclick = () => {
-                const fLlegada = reservaDelDia.Fecha_Llegada ? reservaDelDia.Fecha_Llegada.split("T")[0] : "";
-                const fSalida = reservaDelDia.Fecha_Salida ? reservaDelDia.Fecha_Salida.split("T")[0] : "";
+                // CORRECCIÓN DIRECTA: Se eliminaron las referencias a 'r'
+                const fLlegada = reservaDelDia.Fecha_Llegada ? reservaDelDia.Fecha_Llegada.split("T")[0] : "No definida";
+                const fSalida = reservaDelDia.Fecha_Salida ? reservaDelDia.Fecha_Salida.split("T")[0] : "No definida";
 
                 alert(`📌 DETALLES DE LA RESERVACIÓN
 --------------------------------------------
@@ -252,6 +254,7 @@ function renderizarCalendario() {
         contenedor.appendChild(diaDiv);
     }
 }
+
 
 
 // 🔑 RECUERDA AGREGAR ESTA FUNCIÓN AUXILIAR ABAJO EN TU APP.JS SI AÚN NO LA TIENES:
