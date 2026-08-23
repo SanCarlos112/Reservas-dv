@@ -4,7 +4,17 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhQ1e0ma32EtEx3U5X
 let todasLasReservas = [];
 let mesVisualizado = new Date(); 
 
-document.addEventListener("DOMContentLoaded", () => { obtenerReservas(); });
+// 🔄 CONFIGURACIÓN AL CARGAR LA PÁGINA
+document.addEventListener("DOMContentLoaded", () => { 
+    // 1. Forzamos que la primera vista sea el dashboard visualmente
+    cambiarVista('dashboard'); 
+    
+    // 2. Activamos una actualización automática en tiempo real cada 30 segundos
+    setInterval(() => {
+        console.log("🔄 Sincronizando reservas en segundo plano...");
+        obtenerReservas();
+    }, 30000); // 30000 ms = 30 segundos
+});
 
 function cambiarVista(vistaDestino) {
     const vistas = ['dashboard', 'calendario', 'lista', 'nuevo'];
