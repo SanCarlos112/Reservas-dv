@@ -57,119 +57,136 @@
         <button onclick="cambiarVista('nuevo')" id="btn-nuevo" style="flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer;">Agendar</button>
     </nav>
 
-    <!-- 📦 CONTENEDOR PRINCIPAL -->
-    <main>
+<!-- CONTENEDOR PRINCIPAL -->
+<main class="max-w-6xl mx-auto p-4 flex-1">
 
-        <!-- 🏢 VISTA 1: DASHBOARD -->
-        <section id="vista-dashboard">
-            <div class="banner">
-                <h2 style="margin:0; font-size: 20px;">¡Hola, equipo! 👋</h2>
-                <p style="margin:4px 0 0 0; font-size: 13px; opacity: 0.9;">Estado actual de su departamento vacacional.</p>
-            </div>
-            
-            <div class="grid-stats">
-                <div class="card-stat">
-                    <span class="stat-label">Reservas Activas</span>
-                    <span class="stat-val" id="dash-activas">--</span>
-                </div>
-                <div class="card-stat">
-                    <span class="stat-label">Total Ingresos</span>
-                    <span class="stat-val text-green" id="dash-ingresos">$--</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- 📅 VISTA 2: CALENDARIO -->
-        <section id="vista-calendario" class="hidden">
-            <h2 style="font-size: 18px; margin: 0 0 4px 0;">📅 Disponibilidad por Noches</h2>
-            <div id="calendario-contenedor" style="display: grid; grid-template-cols: repeat(7, 1fr); gap: 6px; background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; text-align: center; font-size: 12px; min-height: 200px; width: 100%; box-sizing: border-box;"></div>
-                <!-- Se dibuja solo mediante el archivo app.js -->
-            </div>
-        </section>
-
-        <!-- 📑 VISTA 3: LISTA DE RESERVAS -->
-        <section id="vista-lista" class="hidden">
-            <input type="text" id="buscador" oninput="filtrarReservas()" placeholder="🔍 Buscar por nombre o teléfono..." class="input-text">
-            <div id="contenedor-cards" style="display: flex; flex-direction: column; gap: 12px;">
-                <!-- Las Cards aparecerán aquí dinámicamente -->
-            </div>
-        </section>
-
-        <!-- ➕ VISTA 4: FORMULARIO AGENDAR -->
-        <section id="vista-nuevo" class="hidden">
-            <h2 style="font-size: 18px; margin: 0 0 4px 0;">📋 Nueva Reservación</h2>
-            <form id="form-reserva" onsubmit="guardarReserva(event)">
+    <!-- 1️⃣ VISTA: DASHBOARD / INICIO -->
+    <div id="vista-dashboard" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
                 <div>
-                    <label>Nombre Completo *</label>
-                    <input type="text" id="Nombre_Completo" required class="input-text">
+                    <p class="text-sm font-medium text-gray-400">Total Reservaciones</p>
+                    <h3 id="dash-total-reservas" class="text-2xl font-bold text-gray-800 mt-1">0</h3>
+                </div>
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-xl text-xl">📊</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-400">Ingresos Totales</p>
+                    <h3 id="dash-ingresos-totales" class="text-2xl font-bold text-emerald-600 mt-1">$0.00</h3>
+                </div>
+                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-xl">💵</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-400">Saldos Pendientes</p>
+                    <h3 id="dash-saldos-pendientes" class="text-2xl font-bold text-amber-600 mt-1">$0.00</h3>
+                </div>
+                <div class="p-3 bg-amber-50 text-amber-600 rounded-xl text-xl">⏳</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2️⃣ VISTA: CALENDARIO -->
+    <div id="vista-calendario" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                🗓️ <span id="calendario-mes-año">Cargando mes...</span>
+            </h2>
+            <div class="flex gap-2">
+                <button type="button" onclick="mesVisualizado.setMonth(mesVisualizado.getMonth() - 1); renderizarCalendario();" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">◀ Ant</button>
+                <button type="button" onclick="mesVisualizado.setMonth(mesVisualizado.getMonth() + 1); renderizarCalendario();" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">Sig ▶</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">
+            <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+        </div>
+        <div id="calendario-contenedor" class="grid grid-cols-7 gap-2 text-sm"></div>
+    </div>
+
+    <!-- 3️⃣ VISTA: LISTA DE RESERVAS -->
+    <div id="vista-lista" class="hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-2">
+            <input type="text" id="buscador-reservas" oninput="filtrarReservas()" placeholder="🔍 Buscar por nombre o teléfono..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+        </div>
+        <div id="contenedor-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- 4️⃣ VISTA: AGENDAR / FORMULARIO (INICIO) -->
+    <div id="vista-formulario" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-2xl mx-auto">
+        <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">📝 Nueva Reservación</h2>
+        
+        <form id="form-reserva" onsubmit="guardarReserva(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Completo *</label>
+                    <input type="text" id="Nombre_Completo" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                 </div>
                 <div>
-                    <label>Teléfono móvil *</label>
-                    <input type="tel" id="Telefono" required class="input-text">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Teléfono móvil</label>
+                    <input type="tel" id="Telefono" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                 </div>
-
-                <div class="grid-form">
-                    <div>
-                        <label>Fecha Llegada *</label>
-                        <input type="date" id="Fecha_Llegada" required class="input-text">
-                    </div>
-                    <div>
-                        <label>Fecha Salida *</label>
-                        <input type="date" id="Fecha_Salida" required class="input-text">
-                    </div>
-                </div>
-
-                <div class="grid-form">
-                    <div>
-                        <label>Total Reserva ($)</label>
-                        <input type="number" id="Total_Reserva" class="input-text">
-                    </div>
-                    <div>
-                        <label>Anticipo ($)</label>
-                        <input type="number" id="Anticipo" class="input-text">
-                    </div>
-                    <div>
-                        <label>Fecha Anticipo</label>
-                        <input type="date" id="Fecha_Anticipo" class="input-text">
-                    </div>
-                    <div>
-                        <label>Liquidación / Pago ($)</label>
-                        <input type="number" id="Pago" class="input-text">
-                    </div>
-                    <div>
-                        <label>Fecha Pago Liq.</label>
-                        <input type="date" id="Fecha_Pago" class="input-text">
-                    </div>
-                    <div>
-                        <label>Pago Limpieza ($)</label>
-                        <input type="number" id="Pago_Limpieza" class="input-text">
-                    </div>
-                    <div>
-                        <label>Fecha Limpieza</label>
-                        <input type="date" id="Fecha_Limpieza" class="input-text">
-                    </div>
-                    <div>
-                        <label>Brazaletes ($)</label>
-                        <input type="number" id="Pago_Brazaletes" class="input-text">
-                    </div>
-                    <div>
-                        <label>Comisión Pagada ($)</label>
-                        <input type="number" id="Comision_Pagada" class="input-text">
-                    </div>
-                    <div>
-                        <label>Fecha Comisión</label>
-                        <input type="date" id="Fecha_Comision" class="input-text">
-                    </div>
-                </div>
-
                 <div>
-                    <label>Observaciones internas</label>
-                    <textarea id="Observaciones" rows="2" class="input-text" style="resize: none;"></textarea>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Llegada *</label>
+                    <input type="date" id="Fecha_Llegada" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                 </div>
-                <button type="submit" class="btn-submit">Guardar Reservación</button>
-            </form>
-        </section>
-    </main>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Salida *</label>
+                    <input type="date" id="Fecha_Salida" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total Reserva ($)</label>
+                    <input type="number" id="Total_Reserva" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Anticipo ($)</label>
+                    <input type="number" id="Anticipo" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Anticipo</label>
+                    <input type="date" id="Fecha_Anticipo" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Liquidación / Pago ($)</label>
+                    <input type="number" id="Pago" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Pago Liq.</label>
+                    <input type="date" id="Fecha_Pago" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Limpieza ($)</label>
+                    <input type="number" id="Pago_Limpieza" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Limpieza</label>
+                    <input type="date" id="Fecha_Limpieza" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Brazaletes ($)</label>
+                    <input type="number" id="Pago_Brazaletes" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Comisión Pagada ($)</label>
+                    <input type="number" id="Comision_Pagada" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Comisión</label>
+                    <input type="date" id="Fecha_Comision" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observaciones</label>
+                <textarea id="Observaciones" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"></textarea>
+            </div>
+            <div class="pt-2">
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all">Guardar Reservación</button>
+            </div>
+        </form>
+    </div>
+
+</main>
+    
     <!-- Conector con el archivo de inteligencia -->
     <script src="app.js"></script>
 </body>
