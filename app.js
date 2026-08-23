@@ -193,19 +193,15 @@ function renderizarCalendario() {
     const año = mesVisualizado.getFullYear();
     const mes = mesVisualizado.getMonth();
 
-    // Nombres de los meses en español para el título
     const meses = [
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
     ];
     titulo.innerText = `${meses[mes]} ${año}`;
 
-    // Obtener primer día de la semana y total de días del mes
     const primerDiaSemana = new Date(año, mes, 1).getDay();
     const diasEnMes = new Date(año, mes + 1, 0).getDate();
 
-    // Ajustar si la semana inicia en Domingo (0) o Lunes
-    // Agregamos celdas vacías al inicio para cuadrar los días de la semana
     const celdasVacias = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
     for (let i = 0; i < celdasVacias; i++) {
         const divVacio = document.createElement("div");
@@ -214,28 +210,22 @@ function renderizarCalendario() {
         contenedor.appendChild(divVacio);
     }
 
-    // Dibujar cada uno de los días del mes
     for (let i = 1; i <= diasEnMes; i++) {
         const diaDiv = document.createElement("div");
         diaDiv.innerText = i;
 
-        // Construir string de fecha en formato YYYY-MM-DD
         const mesStr = String(mes + 1).padStart(2, '0');
         const diaStr = String(i).padStart(2, '0');
         const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
 
-        // Verificar si este día en particular está ocupado por alguna reserva
         const reservaDelDia = obtenerReservaPorFecha(fechaCeldaStr);
 
         if (reservaDelDia) {
-            // Estilos para días OCUPADOS (Rojo)
             diaDiv.className = "p-2 border text-center font-bold bg-red-100 text-red-700 rounded cursor-pointer hover:bg-red-200 transition-colors";
             
-            // Evento al dar clic: Muestra ventana emergente con el desglose del cliente
             diaDiv.onclick = () => {
-                // Limpiamos las fechas eliminando la "T" que manda la base de datos
-                const fLlegada = r.Fecha_Llegada ? r.Fecha_Llegada.split("T")[0] : "";
-                const fSalida = r.Fecha_Salida ? r.Fecha_Salida.split("T")[0] : "";
+                const fLlegada = reservaDelDia.Fecha_Llegada ? reservaDelDia.Fecha_Llegada.split("T")[0] : "";
+                const fSalida = reservaDelDia.Fecha_Salida ? reservaDelDia.Fecha_Salida.split("T")[0] : "";
 
                 alert(`📌 DETALLES DE LA RESERVACIÓN
 --------------------------------------------
@@ -248,10 +238,8 @@ function renderizarCalendario() {
 📝 Obs: ${reservaDelDia.Observaciones || "Ninguna"}`);
             };
         } else {
-            // Estilos para días LIBRES (Blanco/Gris)
             diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
             
-            // Opcional: si das clic en un día libre te puede mandar a registrar una reserva
             diaDiv.onclick = () => {
                 const formLlegada = document.getElementById("Fecha_Llegada");
                 if (formLlegada) {
@@ -264,6 +252,7 @@ function renderizarCalendario() {
         contenedor.appendChild(diaDiv);
     }
 }
+
 
 // 🔑 RECUERDA AGREGAR ESTA FUNCIÓN AUXILIAR ABAJO EN TU APP.JS SI AÚN NO LA TIENES:
 function obtenerReservaPorFecha(fechaCalendarioStr) {
