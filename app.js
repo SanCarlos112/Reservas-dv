@@ -4,262 +4,149 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhQ1e0ma32EtEx3U5X
 let todasLasReservas = [];
 let mesVisualizado = new Date(); 
 
-// 🔄 Inicializar app e íconos al cargar la página
-document.addEventListener("DOMContentLoaded", () => {
-    lucide.createIcons();
-    obtenerReservas();
-});
+document.addEventListener("DOMContentLoaded", () => { obtenerReservas(); });
 
-// 🗺️ Cambiar entre pestañas (Módulos) y forzar actualización en tiempo real desde Google
 function cambiarVista(vistaDestino) {
     const vistas = ['dashboard', 'calendario', 'lista', 'nuevo'];
     vistas.forEach(v => {
         const element = document.getElementById(`vista-${v}`);
         const btn = document.getElementById(`btn-${v}`);
-        
         if (v === vistaDestino) {
             if (element) element.classList.remove('hidden');
-            if (btn) btn.style.color = "#2563eb"; // Azul activo
+            if (btn) btn.style.color = "#2563eb";
         } else {
             if (element) element.classList.add('hidden');
-            if (btn) btn.style.color = "#6b7280"; // Gris inactivo
+            if (btn) btn.style.color = "#6b7280";
         }
     });
-
-    // ⚡ REGLA DE ORO: Si cambias de pestaña, ve a Google Sheets por datos nuevos de inmediato
     if (vistaDestino === 'calendario' || vistaDestino === 'lista' || vistaDestino === 'dashboard') {
         obtenerReservas();
     }
 }
-
-// 📥 Consultar reservas desde Google Sheets
 async function obtenerReservas() {
     try {
         const respuesta = await fetch(WEB_APP_URL);
         todasLasReservas = await respuesta.json();
-        
-        // Ejecutar las actualizaciones visuales una vez que lleguen los datos
         actualizarDashboard();
         renderizarCards(todasLasReservas);
         renderizarCalendario(); 
-    } catch (error) {
-        console.error("Error al cargar datos de Google Sheets:", error);
-    }
+    } catch (e) { console.error("Error:", e); }
 }
 
-// 📊 Actualizar métricas del Inicio
 function actualizarDashboard() {
-    document.getElementById("dash-activas").innerText = todasLasReservas.length;
-    let total = todasLasReservas.reduce((sum, res) => sum + (Number(res.Total_Reserva) || 0), 0);
-    document.getElementById("dash-ingresos").innerText = "$" + total.toLocaleString('es-MX');
+    const act = document.getElementById("dash-activas");
+    const ing = document.getElementById("dash-ingresos");
+    if (act) act.innerText = todasLasReservas.length;
+    let tot = todasLasReservas.reduce((s, r) => s + (Number(r.Total_Reserva) || 0), 0);
+    if (ing) ing.innerText = "$" + tot.toLocaleString('es-MX');
 }
 
-// 📑 Dibujar las "Cards" modernas en la vista de Reservas
 function renderizarCards(lista) {
     const contenedor = document.getElementById("contenedor-cards");
+    if (!contenedor) return;
     contenedor.innerHTML = "";
-
-    if (lista.length === 0) {
-        contenedor.innerHTML = `<p class="text-slate-400 text-sm text-center col-span-full py-8">No se encontraron reservas.</p>`;
+    if (!lista || lista.length === 0) {
+        contenedor.innerHTML = `<p style="color:#9ca3af; text-align:center; padding:20px;">No hay reservas.</p>`;
         return;
     }
-
     lista.forEach(res => {
         const card = document.createElement("div");
-        card.className = "bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3";
+        card.style = "background:white; padding:16px; border-radius:16px; border:1px solid #e5e7eb; margin-bottom:12px;";
         card.innerHTML = `
-            <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f3f4f6; padding-bottom:8px;">
                 <div>
-                    <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-sm font-mono font-bold">${res.Num_Reservacion}</span>
-                    <h3 class="font-bold text-slate-800 text-base mt-1">${res.Nombre_Completo}</h3>
+                    <span style="font-family:monospace; font-weight:bold; background:#f3f4f6; padding:2px 6px; border-radius:4px; font-size:12px;">${res.Num_Reservacion || '---'}</span>
+                    <h3 style="font-size:16px; font-weight:bold; margin:6px 0 0 0;">${res.Nombre_Completo || '---'}</h3>
                 </div>
-                <span class="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Registrado</span>
+                <span style="font-size:12px; background:#dbeafe; color:#1e40af; padding:4px 8px; border-radius:9999px;">Registrado</span>
             </div>
-            <div class="grid grid-cols-2 gap-2 text-xs">
-                <div class="bg-slate-50 p-2 rounded-lg">
-                    <span class="text-slate-400 block">📅 Llegada</span>
-                    <span class="font-semibold text-slate-700">${formatearFecha(res.Fecha_Llegada)}</span>
+            <div style="display:grid; grid-template-cols:1fr 1fr; gap:8px; margin-top:8px;">
+                <div style="background:#f9fafb; padding:8px; border-radius:8px; font-size:12px;">
+                    <span style="color:#9ca3af; display:block;">📅 Llegada</span>
+                    <span style="font-weight:600;">${formatearFecha(res.Fecha_Llegada)}</span>
                 </div>
-                <div class="bg-slate-50 p-2 rounded-lg">
-                    <span class="text-slate-400 block">📅 Salida</span>
-                    <span class="font-semibold text-slate-700">${formatearFecha(res.Fecha_Salida)}</span>
+                <div style="background:#f9fafb; padding:8px; border-radius:8px; font-size:12px;">
+                    <span style="color:#9ca3af; display:block;">📅 Salida</span>
+                    <span style="font-weight:600;">${formatearFecha(res.Fecha_Salida)}</span>
                 </div>
             </div>
-            <div class="flex justify-between text-xs pt-1">
-                <span class="text-slate-500">📞 ${res.Telefono}</span>
-                <span class="font-bold text-slate-800 text-sm">$${(Number(res.Total_Reserva) || 0).toLocaleString('es-MX')}</span>
-            </div>
-        `;
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-top:8px;">
+                <span style="color:#6b7280;">📞 ${res.Telefono || '---'}</span>
+                <span style="font-weight:bold;">$${(Number(res.Total_Reserva) || 0).toLocaleString('es-MX')}</span>
+            </div>`;
         contenedor.appendChild(card);
     });
 }
 
-// 🔍 Buscador en tiempo real para filtrar las tarjetas
 function filtrarReservas() {
-    const texto = document.getElementById("buscador").value.toLowerCase();
-    const filtradas = todasLasReservas.filter(res => 
-        res.Nombre_Completo.toLowerCase().includes(texto) || 
-        res.Telefono.includes(texto)
+    const txt = document.getElementById("buscador").value.toLowerCase();
+    const flt = todasLasReservas.filter(r => 
+        (r.Nombre_Completo && r.Nombre_Completo.toLowerCase().includes(txt)) || 
+        (r.Telefono && r.Telefono.includes(txt))
     );
-    renderizarCards(filtradas);
+    renderizarCards(flt);
 }
-
-// ➕ Enviar nueva reservación a Google Sheets
 async function guardarReserva(event) {
     event.preventDefault();
-    
-    // Recopilar datos del formulario
-    const campos = [
-        "Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", 
-        "Total_Reserva", "Anticipo", "Fecha_Anticipo", "Pago", "Fecha_Pago", 
-        "Pago_Limpieza", "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", 
-        "Fecha_Comision", "Observaciones"
-    ];
-    
+    const campos = ["Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", "Total_Reserva", "Anticipo", "Fecha_Anticipo", "Pago", "Fecha_Pago", "Pago_Limpieza", "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", "Fecha_Comision", "Observaciones"];
     let datos = {};
-    campos.forEach(id => {
-        datos[id] = document.getElementById(id).value;
-    });
-
-    const boton = event.target.querySelector("button");
-    boton.innerText = "Guardando...";
-    boton.disabled = true;
-
+    campos.forEach(id => { const el = document.getElementById(id); datos[id] = el ? el.value : ""; });
+    const btn = event.target.querySelector("button");
+    btn.innerText = "Guardando..."; btn.disabled = true;
     try {
-        const respuesta = await fetch(WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify(datos)
-        });
-        
-        const resultado = await respuesta.json();
-        
-        if (resultado.status === "success") {
-            alert(`🎉 ¡Éxito! Reserva agendada con folio: ${resultado.id}`);
+        const r = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(datos) });
+        const res = await r.json();
+        if (res.status === "success") {
+            alert(`🎉 ¡Éxito! Folio: ${res.id}`);
             document.getElementById("form-reserva").reset();
             cambiarVista('dashboard');
-            obtenerReservas(); // Recargar datos automáticamente
-        } else {
-            alert(resultado.message); // Muestra el mensaje de error por empalme
-        }
-    } catch (error) {
-        alert("Ocurrió un problema en la red al conectar con Google Sheets.");
-        console.error(error);
-    } finally {
-        boton.innerText = "Guardar Reservación";
-        boton.disabled = false;
-    }
+        } else { alert(res.message); }
+    } catch (e) { alert("Error de red"); } finally { btn.innerText = "Guardar Reservación"; btn.disabled = false; }
 }
 
-// 📅 Estructurar un Calendario interactivo con navegación de meses
 function renderizarCalendario() {
-    const contenedor = document.getElementById("calendario-contenedor");
-    if (!contenedor) return;
+    const con = document.getElementById("calendario-contenedor");
+    if (!con) return;
+    const a = mesVisualizado.getFullYear(), m = mesVisualizado.getMonth();
+    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    con.style.display = "grid"; con.style.gridTemplateColumns = "repeat(7, 1fr)"; con.style.gap = "6px"; con.innerHTML = "";
     
-    // Obtener el año y mes que el usuario quiere ver en este momento
-    const añoActual = mesVisualizado.getFullYear();
-    const mesActual = mesVisualizado.getMonth();
-    
-    const meses = [
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-    ];
-    
-    contenedor.style.display = "grid";
-    contenedor.style.gridTemplateColumns = "repeat(7, 1fr)";
-    contenedor.style.gap = "6px";
-    contenedor.innerHTML = "";
-    
-    // 🏷️ TÍTULO DEL MES CON BOTONES DE NAVEGACIÓN ANTERIOR Y SIGUIENTE
-    const cabeceraMes = document.createElement("div");
-    cabeceraMes.style.gridColumn = "span 7";
-    cabeceraMes.style.display = "flex";
-    cabeceraMes.style.justifyContent = "space-between";
-    cabeceraMes.style.alignItems = "center";
-    cabeceraMes.style.padding = "4px 0 12px 0";
-    
-    cabeceraMes.innerHTML = `
-        <span style="font-size: 16px; font-weight: bold; color: #1e3a8a;">📍 ${meses[mesActual]} ${añoActual}</span>
-        <div style="display: flex; gap: 8px;">
-            <button onclick="cambiarMes(-1)" style="padding: 4px 12px; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; font-weight: bold; cursor: pointer;">‹</button>
-            <button onclick="cambiarMes(1)" style="padding: 4px 12px; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; font-weight: bold; cursor: pointer;">›</button>
-        </div>
-    `;
-    contenedor.appendChild(cabeceraMes);
+    const cab = document.createElement("div");
+    cab.style = "grid-column:span 7; display:flex; justify-content:space-between; align-items:center; padding-bottom:12px;";
+    cab.innerHTML = `
+        <span style="font-size:16px; font-weight:bold; color:#1e3a8a;">📍 ${meses[m]} ${a}</span>
+        <div>
+            <button type="button" onclick="cambiarMes(-1)" style="padding:4px 12px; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; font-weight:bold; cursor:pointer;">‹</button>
+            <button type="button" onclick="cambiarMes(1)" style="padding:4px 12px; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; font-weight:bold; cursor:pointer;">›</button>
+        </div>`;
+    con.appendChild(cab);
 
-    // Crear encabezados de días de la semana
-    const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    diasSemana.forEach(d => {
-        contenedor.innerHTML += `<div style="font-weight: bold; color: #9ca3af; padding-bottom: 8px;">${d}</div>`;
-    });
+    ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].forEach(d => { con.innerHTML += `<div style="font-weight:bold; color:#9ca3af; padding-bottom:8px;">${d}</div>`; });
+    const pDia = new Date(a, m, 1).getDay(), tDias = new Date(a, m + 1, 0).getDate();
+    for (let i = 0; i < pDia; i++) { con.innerHTML += `<div></div>`; }
 
-    const primerDiaMes = new Date(añoActual, mesActual, 1).getDay();
-    const totalDiasMes = new Date(añoActual, mesActual + 1, 0).getDate();
-
-    // Rellenar espacios en blanco
-    for (let i = 0; i < primerDiaMes; i++) {
-        contenedor.innerHTML += `<div></div>`;
-    }
-
-    // Generar casillas de los días
-    for (let dia = 1; dia <= totalDiasMes; dia++) {
-        let fechaActual = new Date(añoActual, mesActual, dia);
-        let estaOcupado = verificarNocheOcupada(fechaActual);
-
-        let estiloCaja = estaOcupado 
-            ? "background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; font-weight: bold;" 
-            : "background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;";
-
-        contenedor.innerHTML += `
-            <div style="padding: 8px 0; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 35px; ${estiloCaja}">
-                <span>${dia}</span>
-            </div>
-        `;
+    for (let d = 1; d <= tDias; d++) {
+        let fAct = new Date(a, m, d);
+        let oc = verificarNocheOcupada(fAct);
+        let est = oc ? "background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; font-weight:bold;" : "background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;";
+        con.innerHTML += `<div style="padding:8px 0; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:35px; ${est}"><span>${d}</span></div>`;
     }
 }
 
-// 🔄 Función para avanzar o retroceder meses
-function cambiarMes(direccion) {
-    mesVisualizado.setMonth(mesVisualizado.getMonth() + direccion);
-    renderizarCalendario();
-}
+function cambiarMes(dir) { mesVisualizado.setMonth(mesVisualizado.getMonth() + dir); renderizarCalendario(); }
 
-// 🧠 Verificar ocupación cruzando fechas de forma segura contra Google Sheets
-function verificarNocheOcupada(fecha) {
+function verificarNocheOcupada(f) {
     if (!todasLasReservas || todasLasReservas.length === 0) return false;
-    
-    // Convertir la fecha actual que evalúa el calendario a formato ISO puro (YYYY-MM-DD)
-    let año = fecha.getFullYear();
-    let mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    let dia = String(fecha.getDate()).padStart(2, '0');
-    let fTextoEvaluar = `${año}-${mes}-${dia}`;
-
-    return todasLasReservas.some(res => {
-        if (!res.Fecha_Llegada || !res.Fecha_Salida) return false;
-        
-        // Limpiar formatos de fecha por si vienen con horas adicionales de la base de datos
-        let entrada = res.Fecha_Llegada.split("T")[0];
-        let salida = res.Fecha_Salida.split("T")[0];
-        
-        // La noche pertenece al registro si es igual/mayor a la entrada y menor estricta a la salida
-        return (fTextoEvaluar >= entrada && fTextoEvaluar < salida);
+    let txt = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
+    return todasLasReservas.some(r => {
+        if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
+        return (txt >= r.Fecha_Llegada.split("T")[0] && txt < r.Fecha_Salida.split("T")[0]);
     });
 }
 
-// 🛠️ Función corregida para limpiar fechas largas y dejarlas en formato DD/MM/AAAA
 function formatearFecha(f) {
     if (!f) return "--";
-    
-    // Si viene la fecha larga con la letra "T" de Google Sheets, nos quedamos solo con la parte del año/mes/día
-    let fechaLimpia = f.split("T")[0];
-    
-    // Separamos el año, mes y día
-    const partes = fechaLimpia.split("-");
-    if (partes.length < 3) return f; // Si ya venía formateada por otra razón, la deja igual
-    
-    const año = partes[0];
-    const mes = partes[1];
-    const dia = partes[2];
-    
-    // Armamos el formato corto que necesitas
-    return `${dia}/${mes}/${año}`;
+    const p = f.split("T")[0].split("-");
+    if (p.length < 3) return f;
+    return `${p[2]}/${p[1]}/${p[0]}`;
 }
