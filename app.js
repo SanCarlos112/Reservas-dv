@@ -6,15 +6,19 @@ let mesVisualizado = new Date();
 
 // 🔄 CONFIGURACIÓN AL CARGAR LA PÁGINA
 document.addEventListener("DOMContentLoaded", () => { 
-    // 1. Forzamos que la primera vista sea el dashboard visualmente
+    // 1. Mostramos la pantalla del dashboard inmediatamente
     cambiarVista('dashboard'); 
     
-    // 2. Activamos una actualización automática en tiempo real cada 30 segundos
+    // 2. Forzamos la primera carga de datos al instante
+    obtenerReservas();
+    
+    // 3. Mantenemos el autorefresco cada 30 segundos para el tiempo real
     setInterval(() => {
         console.log("🔄 Sincronizando reservas en segundo plano...");
         obtenerReservas();
-    }, 30000); // 30000 ms = 30 segundos
+    }, 30000); 
 });
+
 
 function cambiarVista(vistaDestino) {
     const vistas = ['dashboard', 'calendario', 'lista', 'nuevo'];
@@ -33,15 +37,32 @@ function cambiarVista(vistaDestino) {
         obtenerReservas();
     }
 }
+
 async function obtenerReservas() {
+    // ⏳ Colocamos mensajes de carga visuales antes de hacer el fetch
+    const contenedorCards = document.getElementById("contenedor-cards");
+    const contenedorCal = document.getElementById("calendario-contenedor");
+    
+    if (contenedorCards) {
+        contenedorCards.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservaciones desde Google Sheets...</p>`;
+    }
+    // Nota: No limpiamos el calendario completo para no romper los botones, 
+    // pero si gustas puedes poner un aviso temporal.
+
     try {
         const respuesta = await fetch(WEB_APP_URL);
         todasLasReservas = await respuesta.json();
         actualizarDashboard();
         renderizarCards(todasLasReservas);
         renderizarCalendario(); 
-    } catch (e) { console.error("Error:", e); }
+    } catch (e) { 
+        console.error("Error:", e); 
+        if (contenedorCards) {
+            contenedorCards.innerHTML = `<p style="color:#dc2626; text-align:center; padding:20px;">❌ Error al conectar con el servidor. Revisa tu conexión.</p>`;
+        }
+    }
 }
+
 
 function actualizarDashboard() {
     const act = document.getElementById("dash-activas");
