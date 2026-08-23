@@ -19,22 +19,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 30000); 
 });
 
-
 function cambiarVista(vistaDestino) {
-    const vistas = ['dashboard', 'calendario', 'lista', 'nuevo'];
-    vistas.forEach(v => {
-        const element = document.getElementById(`vista-${v}`);
-        const btn = document.getElementById(`btn-${v}`);
-        if (v === vistaDestino) {
-            if (element) element.classList.remove('hidden');
-            if (btn) btn.style.color = "#2563eb";
-        } else {
-            if (element) element.classList.add('hidden');
-            if (btn) btn.style.color = "#6b7280";
+    // 1. Lista de todos los contenedores visuales declarados en el HTML
+    const vistas = ['dashboard', 'calendario', 'lista', 'formulario'];
+    
+    // 2. Ocultamos absolutamente todas las vistas agregando la clase 'hidden'
+    vistas.forEach(vista => {
+        const elemento = document.getElementById(`vista-${vista}`);
+        if (elemento) {
+            elemento.classList.add('hidden');
         }
     });
-    if (vistaDestino === 'calendario' || vistaDestino === 'lista' || vistaDestino === 'dashboard') {
-        obtenerReservas();
+
+    // 3. Mostramos únicamente la vista seleccionada removiendo 'hidden'
+    const elementoDestino = document.getElementById(`vista-${vistaDestino}`);
+    if (elementoDestino) {
+        elementoDestino.classList.remove('hidden');
+    }
+
+    // 4. Acciones inteligentes: Refrescamos los componentes según la pestaña activa
+    if (vistaDestino === 'dashboard') {
+        actualizarDashboard();
+    } else if (vistaDestino === 'calendario') {
+        renderizarCalendario();
+    } else if (vistaDestino === 'lista') {
+        renderizarCards(todasLasReservas);
     }
 }
 
