@@ -184,33 +184,104 @@ function verificarConflictoFechas(llegadaNueva, salidaNueva) {
 }
 
 function renderizarCalendario() {
-    const con = document.getElementById("calendario-contenedor");
-    if (!con) return;
-    const a = mesVisualizado.getFullYear(), m = mesVisualizado.getMonth();
-    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    con.style.display = "grid"; con.style.gridTemplateColumns = "repeat(7, 1fr)"; con.style.gap = "6px"; con.innerHTML = "";
-    
-    const cab = document.createElement("div");
-    cab.style = "grid-column:span 7; display:flex; justify-content:space-between; align-items:center; padding-bottom:12px;";
-    cab.innerHTML = `
-        <span style="font-size:16px; font-weight:bold; color:#1e3a8a;">📍 ${meses[m]} ${a}</span>
-        <div>
-            <button type="button" onclick="cambiarMes(-1)" style="padding:4px 12px; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; font-weight:bold; cursor:pointer;">‹</button>
-            <button type="button" onclick="cambiarMes(1)" style="padding:4px 12px; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; font-weight:bold; cursor:pointer;">›</button>
-        </div>`;
-    con.appendChild(cab);
+    const contenedor = document.getElementById("calendario-contenedor");
+    const titulo = document.getElementById("calendario-mes-año");
+    if (!contenedor || !titulo) return;
 
-    ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].forEach(d => { con.innerHTML += `<div style="font-weight:bold; color:#9ca3af; padding-bottom:8px;">${d}</div>`; });
-    const pDia = new Date(a, m, 1).getDay(), tDias = new Date(a, m + 1, 0).getDate();
-    for (let i = 0; i < pDia; i++) { con.innerHTML += `<div></div>`; }
+    contenedor.innerHTML = "";
 
-    for (let d = 1; d <= tDias; d++) {
-        let fAct = new Date(a, m, d);
-        let oc = verificarNocheOcupada(fAct);
-        let est = oc ? "background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; font-weight:bold;" : "background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;";
-        con.innerHTML += `<div style="padding:8px 0; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:35px; ${est}"><span>${d}</span></div>`;
+    const año = mesVisualizado.getFullYear();
+    const mes = mesVisualizado.getMonth();
+
+    // Nombres de los meses en español para el título
+    const meses = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+    titulo.innerText = `${meses[mes]} ${año}`;
+
+    // Obtener primer día de la semana y total de días del mes
+    const primerDiaSemana = new Date(año, mes, 1).getDay();
+    const diasEnMes = new Date(año, mes + 1, 0).getDate();
+
+    // Ajustar si la semana inicia en Domingo (0) o Lunes
+    // Agregamos celdas vacías al inicio para cuadrar los días de la semana
+    const celdasVacias = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
+    for (let i = 0; i < celdasVacias; i++) {
+        const divVacio = document.createElement("div");
+        divVacio.className = "p-2 border bg-gray-50 text-transparent select-none";
+        divVacio.innerText = "-";
+        contenedor.appendChild(divVacio);
+    }
+
+    // Dibujar cada uno de los días del mes
+    for (let i = 1; i <= diasEnMes; i++) {
+        const diaDiv = document.createElement("div");
+        diaDiv.innerText = i;
+
+        // Construir string de fecha en formato YYYY-MM-DD
+        const mesStr = String(mes + 1).padStart(2, '0');
+        const diaStr = String(i).padStart(2, '0');
+        const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
+
+        // Verificar si este día en particular está ocupado por alguna reserva
+        const reservaDelDia = obtenerReservaPorFecha(fechaCeldaStr);
+
+        if (reservaDelDia) {
+            // Estilos para días OCUPADOS (Rojo)
+            diaDiv.className = "p-2 border text-center font-bold bg-red-100 text-red-700 rounded cursor-pointer hover:bg-red-200 transition-colors";
+            
+            // Evento al dar clic: Muestra ventana emergente con el desglose del cliente
+            diaDiv.onclick = () => {
+                // Limpiamos las fechas eliminando la "T" que manda la base de datos
+                const fLlegada = r.Fecha_Llegada ? r.Fecha_Llegada.split("T")[0] : "";
+                const fSalida = r.Fecha_Salida ? r.Fecha_Salida.split("T")[0] : "";
+
+                alert(`📌 DETALLES DE LA RESERVACIÓN
+--------------------------------------------
+👤 Huésped: ${reservaDelDia.Nombre_Completo}
+📱 Teléfono: ${reservaDelDia.Telefono || "No registrado"}
+📅 Llegada: ${fLlegada}
+📅 Salida: ${fSalida}
+💵 Total: $${reservaDelDia.Total_Reserva} MN
+💰 Anticipo: $${reservaDelDia.Anticipo || 0} MN
+📝 Obs: ${reservaDelDia.Observaciones || "Ninguna"}`);
+            };
+        } else {
+            // Estilos para días LIBRES (Blanco/Gris)
+            diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
+            
+            // Opcional: si das clic en un día libre te puede mandar a registrar una reserva
+            diaDiv.onclick = () => {
+                const formLlegada = document.getElementById("Fecha_Llegada");
+                if (formLlegada) {
+                    formLlegada.value = fechaCeldaStr;
+                    cambiarVista('formulario');
+                }
+            };
+        }
+
+        contenedor.appendChild(diaDiv);
     }
 }
+
+// 🔑 RECUERDA AGREGAR ESTA FUNCIÓN AUXILIAR ABAJO EN TU APP.JS SI AÚN NO LA TIENES:
+function obtenerReservaPorFecha(fechaCalendarioStr) {
+    if (!todasLasReservas || todasLasReservas.length === 0) return null;
+
+    const tiempoCelda = new Date(fechaCalendarioStr + "T00:00:00").getTime();
+
+    return todasLasReservas.find(r => {
+        if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
+
+        const inicioExistente = new Date(r.Fecha_Llegada.split("T")[0] + "T00:00:00").getTime();
+        const finExistente = new Date(r.Fecha_Salida.split("T")[0] + "T00:00:00").getTime();
+
+        // Si la fecha cae dentro del rango de ocupación (sin contar el día exacto de salida)
+        return (tiempoCelda >= inicioExistente && tiempoCelda < finExistente);
+    });
+}
+
 
 function cambiarMes(dir) { mesVisualizado.setMonth(mesVisualizado.getMonth() + dir); renderizarCalendario(); }
 
