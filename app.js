@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     obtenerReservas();
 });
 
-// 🗺️ Cambiar entre pestañas (Módulos) y forzar dibujado del calendario
+// 🗺️ Cambiar entre pestañas (Módulos) y forzar actualización en tiempo real desde Google
 function cambiarVista(vistaDestino) {
     const vistas = ['dashboard', 'calendario', 'lista', 'nuevo'];
     vistas.forEach(v => {
@@ -18,17 +18,17 @@ function cambiarVista(vistaDestino) {
         const btn = document.getElementById(`btn-${v}`);
         
         if (v === vistaDestino) {
-            element.classList.remove('hidden');
-            if (btn) btn.style.color = "#2563eb"; // Color azul para pestaña activa
+            if (element) element.classList.remove('hidden');
+            if (btn) btn.style.color = "#2563eb"; // Azul activo
         } else {
-            element.classList.add('hidden');
-            if (btn) btn.style.color = "#6b7280"; // Color gris para inactivas
+            if (element) element.classList.add('hidden');
+            if (btn) btn.style.color = "#6b7280"; // Gris inactivo
         }
     });
 
-    // ⚡ SI SE ABRE EL CALENDARIO, SE DIBUJA EN ESE INSTANTE
-    if (vistaDestino === 'calendario') {
-        renderizarCalendario();
+    // ⚡ REGLA DE ORO: Si cambias de pestaña, ve a Google Sheets por datos nuevos de inmediato
+    if (vistaDestino === 'calendario' || vistaDestino === 'lista' || vistaDestino === 'dashboard') {
+        obtenerReservas();
     }
 }
 
