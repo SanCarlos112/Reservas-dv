@@ -117,13 +117,42 @@ function filtrarReservas() {
     );
     renderizarCards(flt);
 }
+
 async function guardarReserva(event) {
     event.preventDefault();
+
+    // 1. OBTENER VALORES DE FECHAS PARA VALIDACIÓN
+    const fLlegadaTxt = document.getElementById("Fecha_Llegada")?.value;
+    const fSalidaTxt = document.getElementById("Fecha_Salida")?.value;
+
+    if (!fLlegadaTxt || !fSalidaTxt) {
+        alert("⚠️ Por favor, selecciona las fechas de llegada y salida.");
+        return;
+    }
+
+    const fechaLlegada = new Date(fLlegadaTxt + "T00:00:00");
+    const fechaSalida = new Date(fSalidaTxt + "T00:00:00");
+
+    // 2. VALIDACIÓN 1: FECHA LOGICA
+    if (fechaSalida <= fechaLlegada) {
+        alert("❌ Error: La fecha de salida debe ser posterior a la fecha de llegada.");
+        return;
+    }
+
+    // 3. VALIDACIÓN 2: DISPONIBILIDAD (DÍAS OCUPADOS)
+    if (verificarConflictoFechas(fLlegadaTxt, fSalidaTxt)) {
+        alert("🚫 ¡Conflicto de fechas! Los días seleccionados ya se encuentran ocupados por otra reservación.");
+        return;
+    }
+
+    // 4. PROCESO DE GUARDADO TRADICIONAL
     const campos = ["Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", "Total_Reserva", "Anticipo", "Fecha_Anticipo", "Pago", "Fecha_Pago", "Pago_Limpieza", "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", "Fecha_Comision", "Observaciones"];
     let datos = {};
     campos.forEach(id => { const el = document.getElementById(id); datos[id] = el ? el.value : ""; });
+    
     const btn = event.target.querySelector("button");
     btn.innerText = "Guardando..."; btn.disabled = true;
+    
     try {
         const r = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(datos) });
         const res = await r.json();
@@ -133,6 +162,25 @@ async function guardarReserva(event) {
             cambiarVista('dashboard');
         } else { alert(res.message); }
     } catch (e) { alert("Error de red"); } finally { btn.innerText = "Guardar Reservación"; btn.disabled = false; }
+}
+
+// 🔑 FUNCIÓN AUXILIAR: Verifica si el rango elegido choca con otra reserva
+function verificarConflictoFechas(llegadaNueva, salidaNueva) {
+    if (!todasLasReservas || todasLasReservas.length === 0) return false;
+    
+    // Convertimos los strings a milisegundos para comparar rangos de tiempo fácilmente
+    const inicioNuevo = new Date(llegadaNueva + "T00:00:00").getTime();
+    const finNuevo = new Date(salidaNueva + "T00:00:00").getTime();
+
+    return todasLasReservas.some(r => {
+        if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
+        
+        const inicioExistente = new Date(r.Fecha_Llegada.split("T")[0] + "T00:00:00").getTime();
+        const finExistente = new Date(r.Fecha_Salida.split("T")[0] + "T00:00:00").getTime();
+
+        // Fórmula de solapamiento de rangos: (InicioA < FinB) Y (FinA > InicioB)
+        return (inicioNuevo < finExistente && finNuevo > inicioExistente);
+    });
 }
 
 function renderizarCalendario() {
