@@ -320,11 +320,14 @@ function obtenerReservaPorFecha(fechaCalendarioStr) {
 
     return todasLasReservas.find(r => {
         if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
+        
+        // Limpiamos cualquier formato de hora (como 'T00:00:00.000Z') partiendo el string por la letra T
+        const limpiaLlegada = r.Fecha_Llegada.split("T")[0];
+        const limpiaSalida = r.Fecha_Salida.split("T")[0];
 
-        const inicioExistente = new Date(r.Fecha_Llegada.split("T")[0] + "T00:00:00").getTime();
-        const finExistente = new Date(r.Fecha_Salida.split("T")[0] + "T00:00:00").getTime();
+        const inicioExistente = new Date(limpiaLlegada + "T00:00:00").getTime();
+        const finExistente = new Date(limpiaSalida + "T00:00:00").getTime();
 
-        // Si la fecha cae dentro del rango de ocupación (sin contar el día exacto de salida)
         return (tiempoCelda >= inicioExistente && tiempoCelda < finExistente);
     });
 }
