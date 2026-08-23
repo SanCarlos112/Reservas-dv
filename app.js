@@ -304,9 +304,9 @@ function renderizarCalendario() {
 
             contenedor.appendChild(diaDiv);
         }
-    } catch (error Critico) {
-        console.error("Falla en renderizarCalendario:", errorCritico);
-        contenedor.innerHTML = `<p style="color:#dc2626; padding:20px; text-align:center;">⚠️ Error interno al dibujar el calendario: ${errorCritico.message}</p>`;
+    } catch (error) {
+        console.error("Falla en renderizarCalendario:", error);
+        contenedor.innerHTML = `<p style="color:#dc2626; padding:20px; text-align:center;">⚠️ Error interno al dibujar el calendario: ${error.message}</p>`;
     }
 }
 
