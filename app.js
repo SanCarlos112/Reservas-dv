@@ -268,42 +268,60 @@ function renderizarCalendario() {
             contenedor.appendChild(divVacio);
         }
 
-        for (let i = 1; i <= diasEnMes; i++) {
-            const diaDiv = document.createElement("div");
-            diaDiv.innerText = i;
+    for (let i = 1; i <= diasEnMes; i++) {
+        const diaDiv = document.createElement("div");
+        diaDiv.innerText = i;
 
-            const mesStr = String(mes + 1).padStart(2, '0');
-            const diaStr = String(i).padStart(2, '0');
-            const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
+        const mesStr = String(mes + 1).padStart(2, '0');
+        const diaStr = String(i).padStart(2, '0');
+        const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
 
-            // Seguridad extra: verificar si la función auxiliar existe
-            const reservaDelDia = (typeof obtenerReservaPorFecha === "function") 
-                ? obtenerReservaPorFecha(fechaCeldaStr) 
-                : null;
+        // Buscamos si el día está ocupado y obtenemos el objeto de la reserva junto con su índice
+        const resultadoBusqueda = obtenerReservaConIndice(fechaCeldaStr);
 
-            if (reservaDelDia) {
-                diaDiv.className = "p-2 border text-center font-bold bg-red-100 text-red-700 rounded cursor-pointer hover:bg-red-200 transition-colors";
-                
-                diaDiv.onclick = () => {
-                    const fLlegada = reservaDelDia.Fecha_Llegada ? String(reservaDelDia.Fecha_Llegada).split("T")[0] : "No definida";
-                    const fSalida = reservaDelDia.Fecha_Salida ? String(reservaDelDia.Fecha_Salida).split("T")[0] : "No definida";
-
-                    alert(`📌 DETALLES DE LA RESERVACIÓN\n--------------------------------------------\n👤 Huésped: ${reservaDelDia.Nombre_Completo || "Desconocido"}\n📱 Teléfono: ${reservaDelDia.Telefono || "No registrado"}\n📅 Llegada: ${fLlegada}\n📅 Salida: ${fSalida}\n💵 Total: $${reservaDelDia.Total_Reserva || 0} MN\n💰 Anticipo: $${reservaDelDia.Anticipo || 0} MN\n📝 Obs: ${reservaDelDia.Observaciones || "Ninguna"}`);
+        if (resultadoBusqueda) {
+            const { reserva, indice } = resultadoBusqueda;
+            
+            // Asignamos uno de los 5 colores basados en la posición de la reserva
+            const numeroColor = indice % 5;
+            diaDiv.className = `p-2 border text-center rounded celda-ocupada user-color-${numeroColor}`;
+            
+            diaDiv.onclick = () => {
+                // 🔄 CONVERSIÓN DE FORMATO: Pasamos de AAAA-MM-DD a DD-MM-AAAA para tu lectura fácil
+                const formatearFecha = (fechaTxt) => {
+                    if (!fechaTxt) return "No definida";
+                    const partes = fechaTxt.split("T")[0].split("-");
+                    return `${partes[2]}-${partes[1]}-${partes[0]}`; // DD-MM-AAAA
                 };
-            } else {
-                diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
-                
-                diaDiv.onclick = () => {
-                    const formLlegada = document.getElementById("Fecha_Llegada");
-                    if (formLlegada) {
-                        formLlegada.value = fechaCeldaStr;
-                        cambiarVista('formulario');
-                    }
-                };
-            }
 
-            contenedor.appendChild(diaDiv);
+                const fLlegadaEspañol = formatearFecha(reserva.Fecha_Llegada);
+                const fSalidaEspañol = formatearFecha(reserva.Fecha_Salida);
+
+                alert(`📌 DETALLES DE LA RESERVACIÓN
+--------------------------------------------
+👤 Huésped: ${reserva.Nombre_Completo}
+📱 Teléfono: ${reserva.Telefono || "No registrado"}
+📅 Llegada: ${fLlegadaEspañol}
+📅 Salida: ${fSalidaEspañol}
+💵 Total: $${reserva.Total_Reserva} MN
+💰 Anticipo: $${reserva.Anticipo || 0} MN
+📝 Obs: ${reserva.Observaciones || "Ninguna"}`);
+            };
+        } else {
+            diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
+            
+            diaDiv.onclick = () => {
+                const formLlegada = document.getElementById("Fecha_Llegada");
+                if (formLlegada) {
+                    formLlegada.value = fechaCeldaStr;
+                    cambiarVista('formulario');
+                }
+            };
         }
+
+        contenedor.appendChild(diaDiv);
+    }
+    
     } catch (error) {
         console.error("Falla en renderizarCalendario:", error);
         contenedor.innerHTML = `<p style="color:#dc2626; padding:20px; text-align:center;">⚠️ Error interno al dibujar el calendario: ${error.message}</p>`;
@@ -349,4 +367,31 @@ function formatearFecha(f) {
     const p = f.split("T")[0].split("-");
     if (p.length < 3) return f;
     return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+function obtenerReservaConIndice(fechaCalendarioStr) {
+    if (!todasLasReservas || todasLasReservas.length === 0) return null;
+
+    const tiempoCelda = new Date(fechaCalendarioStr + "T00:00:00").getTime();
+
+    // Buscamos la posición (índice) en el arreglo original de reservas
+    const indice = todasLasReservas.findIndex(r => {
+        if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
+        
+        const stringLlegada = r.Fecha_Llegada.split("T")[0];
+        const stringSalida = r.Fecha_Salida.split("T")[0];
+
+        const inicioExistente = new Date(stringLlegada + "T00:00:00").getTime();
+        const finExistente = new Date(stringSalida + "T00:00:00").getTime();
+
+        return (tiempoCelda >= inicioExistente && tiempoCelda < finExistente);
+    });
+
+    if (indice !== -1) {
+        return {
+            reserva: todasLasReservas[indice],
+            indice: indice
+        };
+    }
+    return null;
 }
