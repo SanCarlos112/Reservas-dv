@@ -39,9 +39,49 @@
         .day-box { padding: 8px 0; border: 1px solid #e5e7eb; border-radius: 8px; }
         .day-busy { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; font-weight: bold; }
         .day-free { background-color: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+
+/* 📊 ARREGLO NATIVO: DASHBOARD */
+#vista-dashboard .grid {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 16px !important;
+    justify-content: space-between;
+}
+#vista-dashboard .bg-white {
+    flex: 1 !important;
+    min-width: 250px;
+    padding: 24px !important;
+    border-radius: 16px !important;
+    border: 1px solid #f3f4f6 !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+}
+
+/* 📅 ARREGLO NATIVO: CALENDARIO Y DÍAS DE LA SEMANA */
+#vista-calendario .grid-cols-7 {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    gap: 8px !important;
+    text-align: center !important;
+}
+#calendario-contenedor div {
+    padding: 12px !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    min-height: 45px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 🗂️ ARREGLO NATIVO: CONTENEDOR DE TARJETAS (RESERVAS) */
+#contenedor-cards {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 16px !important;
+}
+
     </style>
-    <!-- Inyección del motor visual Tailwind CSS -->
-    <script src="https://unpkg.com"></script>
 </head>
 <body>
 
