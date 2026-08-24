@@ -12,12 +12,36 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Forzamos la primera carga de datos al instante
     obtenerReservas();
     
-    // 3. Mantenemos el autorefresco cada 30 segundos para el tiempo real
+    // 3. Mantenemos el autorefresco inteligente en segundo plano cada 30 segundos
     setInterval(() => {
-        console.log("🔄 Sincronizando reservas en segundo plano...");
-        obtenerReservas();
+        // 🛡️ REGLA DE ORO: Si el usuario está usando la pantalla de 'lista' (Reservas) buscando o auditando,
+        // NO disparamos la actualización para no interrumpir su trabajo ni vaciar la pantalla.
+        const vistaActiva = obtenerVistaActual();
+        
+        if (vistaActiva !== 'lista') {
+            console.log("🔄 Sincronizando reservas en segundo plano...");
+            obtenerReservas();
+        } else {
+            console.log("🛑 Sincronización en pausa temporal: Usuario auditando o buscando reservas.");
+        }
     }, 30000); 
 });
+
+// 🔑 FUNCIÓN AUXILIAR: Detecta qué pestaña está viendo el usuario en su pantalla
+function obtenerVistaActual() {
+    const vistas = ['dashboard', 'calendario', 'lista', 'formulario'];
+    let vistaActiva = 'dashboard';
+    
+    vistas.forEach(vista => {
+        const elemento = document.getElementById(`vista-${vista}`);
+        // Si el elemento existe y NO tiene la clase hidden, significa que está visible en pantalla
+        if (elemento && !elemento.classList.contains('hidden')) {
+            vistaActiva = vista;
+        }
+    });
+    
+    return vistaActiva;
+}
 
 function cambiarVista(vistaDestino) {
     const vistas = ['dashboard', 'calendario', 'lista', 'formulario'];
