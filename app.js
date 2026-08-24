@@ -49,26 +49,29 @@ function cambiarVista(vistaDestino) {
 }
 
 async function obtenerReservas() {
-    // ⏳ Colocamos mensajes de carga visuales antes de hacer el fetch
     const contenedorCards = document.getElementById("contenedor-cards");
-    const contenedorCal = document.getElementById("calendario-contenedor");
     
     if (contenedorCards) {
         contenedorCards.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservaciones desde Google Sheets...</p>`;
     }
-    // Nota: No limpiamos el calendario completo para no romper los botones, 
-    // pero si gustas puedes poner un aviso temporal.
 
     try {
         const respuesta = await fetch(WEB_APP_URL);
         todasLasReservas = await respuesta.json();
+        
+        // 🔄 ACTUALIZACIÓN COMPONENTES
         actualizarDashboard();
-        renderizarCards(todasLasReservas);
         renderizarCalendario(); 
+        
+        // 🔥 CORRECCIÓN: Llamamos a la nueva función unificada en vez de la vieja renderizarCards
+        if (typeof filtrarYRenderizarReservas === "function") {
+            filtrarYRenderizarReservas();
+        }
+        
     } catch (e) { 
-        console.error("Error:", e); 
+        console.error("Error al descargar reservas:", e); 
         if (contenedorCards) {
-            contenedorCards.innerHTML = `<p style="color:#dc2626; text-align:center; padding:20px;">❌ Error al conectar con el servidor. Revisa tu conexión.</p>`;
+            contenedorCards.innerHTML = `<p style="color:#dc2626; text-align:center; padding:20px; font-weight:500;">❌ Error al conectar con el servidor. Revisa tu conexión.</p>`;
         }
     }
 }
