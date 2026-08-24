@@ -44,37 +44,43 @@ function obtenerVistaActual() {
 }
 
 /**
- * Controla la navegación del sistema ocultando/mostrando las vistas con clases Tailwind
- * e iluminando dinámicamente el botón del módulo activo.
+ * Controla la navegación del sistema iluminando dinámicamente el botón del módulo activo.
  */
 function cambiarVista(vista) {
     console.log("🔄 [Navegación] Cambiando a la vista:", vista);
 
     // ==========================================
-    // 1. CONTROL DE SECCIONES (USANDO CLASE HIDDEN)
+    // 1. TU LÓGICA DE SECCIONES (Modo Seguro)
     // ==========================================
-    // Mapeamos el nombre de la vista con el ID real de los contenedores en tu HTML
-    const vistasContenedores = {
-        'dashboard': 'dashboard',
-        'calendario': 'calendario',
-        'lista': 'lista',
-        'formulario': 'formulario'
-    };
+    // Aquí vamos a poner los IDs EXACTOS de tus contenedores. 
+    // He incluido las variantes comunes de tu proyecto para asegurar que encuentre el correcto:
+    
+    const divDashboard = document.getElementById('dashboard') || document.getElementById('dashboard-view');
+    const divCalendario = document.getElementById('calendario') || document.getElementById('calendario-view');
+    const divLista = document.getElementById('lista') || document.getElementById('lista-reservas') || document.getElementById('modulo-lista');
+    const divFormulario = document.getElementById('formulario') || document.getElementById('formulario-view');
 
-    Object.keys(vistasContenedores).forEach(clave => {
-        const idContenedor = vistasContenedores[clave];
-        const elemento = document.getElementById(idContenedor);
-        
-        if (elemento) {
-            if (clave === vista) {
-                // Si es la vista seleccionada, le quitamos 'hidden' para que se muestre
-                elemento.classList.remove('hidden');
-            } else {
-                // Si no, le agregamos 'hidden' para ocultarla
-                elemento.classList.add('hidden');
-            }
-        }
-    });
+    // Usamos el método de remoción de clases que maneja tu Tailwind CSS
+    if (divDashboard) {
+        if (vista === 'dashboard') divDashboard.classList.remove('hidden');
+        else divDashboard.classList.add('hidden');
+    }
+    
+    if (divCalendario) {
+        if (vista === 'calendario') divCalendario.classList.remove('hidden');
+        else divCalendario.classList.add('hidden');
+    }
+    
+    if (divLista) {
+        if (vista === 'lista') divLista.classList.remove('hidden');
+        else divLista.classList.add('hidden');
+    }
+    
+    if (divFormulario) {
+        if (vista === 'formulario') divFormulario.classList.remove('hidden');
+        else divFormulario.classList.add('hidden');
+    }
+
 
     // ==========================================
     // 2. ILUMINACIÓN DINÁMICA DEL MENÚ DE MÓDULOS
@@ -86,18 +92,17 @@ function cambiarVista(vista) {
         'formulario': 'btn-nuevo'
     };
 
-    // Recorremos todos los botones para dejarlos en estado "Apagado" (Gris / Normal)
+    // Recorremos todos los botones para dejarlos en estado "Apagado"
     Object.keys(botonesMenu).forEach(claveVista => {
         const idBoton = botonesMenu[claveVista];
         const boton = document.getElementById(idBoton);
         
         if (boton) {
             boton.classList.remove('active');
-            // Estilos limpios para el botón inactivo
             boton.style.backgroundColor = "transparent";
-            boton.style.color = "#6b7280";          // Texto Gris
-            boton.style.fontWeight = "500";         // Grosor de letra normal
-            boton.style.borderBottom = "none";      // Sin línea inferior
+            boton.style.color = "#6b7280";          
+            boton.style.fontWeight = "500";         
+            boton.style.borderBottom = "none";      
         }
     });
 
@@ -107,13 +112,13 @@ function cambiarVista(vista) {
     
     if (botonActivo) {
         botonActivo.classList.add('active');
-        // Estilos destacados para el botón activo
-        botonActivo.style.backgroundColor = "#eff6ff"; // Fondo azul muy claro
-        botonActivo.style.color = "#1d4ed8";          // Texto Azul fuerte
-        botonActivo.style.fontWeight = "700";         // Letra en Negrita
-        botonActivo.style.borderBottom = "3px solid #1d4ed8"; // Línea inferior azul indicadora
+        botonActivo.style.backgroundColor = "#eff6ff"; 
+        botonActivo.style.color = "#1d4ed8";          
+        botonActivo.style.fontWeight = "700";         
+        botonActivo.style.borderBottom = "3px solid #1d4ed8"; 
     }
 }
+
 
 async function obtenerReservas() {
     const contenedorCards = document.getElementById("contenedor-cards");
