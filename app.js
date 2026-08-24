@@ -530,7 +530,6 @@ function obtenerReservaConIndice(fechaCalendarioStr) {
     return null;
 }
 
-
 // ✏️ Se ejecuta al pulsar el botón azul "Actualizar / Cancelar"
 function abrirModalModificar(identificador) {
     if (!todasLasReservas || todasLasReservas.length === 0) return;
@@ -545,10 +544,15 @@ function abrirModalModificar(identificador) {
         return;
     }
 
+    console.log("🔍 [Depuración DV] Datos originales recibidos de la base de datos:", reserva);
+
     // 1. Cambiamos visualmente el título del formulario y encendemos el botón de volver
     document.getElementById("titulo-formulario").innerText = "✏️ Modificar / Cancelar Reservación";
-    document.getElementById("btn-cancelar-edicion").classList.remove("hidden");
-    document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
+    const btnCancelar = document.getElementById("btn-cancelar-edicion");
+    if (btnCancelar) {
+        btnCancelar.classList.remove("hidden");
+        btnCancelar.style.display = "inline-block";
+    }
 
     // 2. Cambiamos el texto del botón de envío principal
     const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
@@ -557,30 +561,45 @@ function abrirModalModificar(identificador) {
     // 3. Guardamos el ID en el campo oculto para que el sistema sepa que es una EDICIÓN
     document.getElementById("form-reserva-id").value = reserva.Num_Reservacion || reserva.id || "";
 
-    // 4. Mapeamos y auto-rellenamos cada campo del formulario con los datos del Excel
-    const campos = [
+    // 4. Mapeamos los campos numéricos y de texto estándar
+    const camposEstandar = [
         "Nombre_Completo", "Telefono", "Total_Reserva", "Anticipo", 
-        "Fecha_Anticipo", "Pago", "Fecha_Pago", "Pago_Limpieza", 
-        "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", 
-        "Fecha_Comision", "Observaciones"
+        "Pago_Limpieza", "Pago_Brazaletes", "Comision_Pagada", "Observaciones"
     ];
 
-    campos.forEach(id => {
+    camposEstandar.forEach(id => {
         const elemento = document.getElementById(id);
         if (elemento) {
             elemento.value = reserva[id] || "";
         }
     });
 
-    // 5. Tratamiento especial para las fechas de Llegada y Salida (limpieza de formato 'T')
-    if (document.getElementById("Fecha_Llegada") && reserva.Fecha_Llegada) {
-        document.getElementById("Fecha_Llegada").value = reserva.Fecha_Llegada.substring(0, 10);
-    }
-    if (document.getElementById("Fecha_Salida") && reserva.Fecha_Salida) {
-        document.getElementById("Fecha_Salida").value = reserva.Fecha_Salida.substring(0, 10);
+    // 5. 🛡️ DEPURACIÓN DE LIQUIDACIÓN: Mapea con seguridad al id="Pago" de tu HTML
+    const elementoPago = document.getElementById("Pago");
+    if (elementoPago) {
+        // Busca bajo el nombre 'Pago_Liquidacion' o 'Pago' según responda tu Sheets
+        elementoPago.value = reserva.Pago_Liquidacion || reserva.Pago || "";
     }
 
-    // 6. Redirigimos automáticamente al usuario a la pestaña del formulario
+    // 6. 📅 TRATAMIENTO SEGURO DE FECHAS (Corta los primeros 10 caracteres AAAA-MM-DD para el input tipo date)
+    const mapeoFechas = [
+        { idHtml: "Fecha_Llegada", propiedadJson: reserva.Fecha_Llegada },
+        { idHtml: "Fecha_Salida", propiedadJson: reserva.Fecha_Salida },
+        { idHtml: "Fecha_Anticipo", propiedadJson: reserva.Fecha_Anticipo },
+        { idHtml: "Fecha_Pago", propiedadJson: reserva.Fecha_Pago_Liq || reserva.Fecha_Pago || reserva.Fecha_Pago_Liquidacion },
+        { idHtml: "Fecha_Limpieza", propiedadJson: reserva.Fecha_Limpieza },
+        { idHtml: "Fecha_Comision", propiedadJson: reserva.Fecha_Comision }
+    ];
+
+    mapeoFechas.forEach(campo => {
+        const elemento = document.getElementById(campo.idHtml);
+        if (elemento) {
+            const valorFecha = campo.propiedadJson ? String(campo.propiedadJson).substring(0, 10) : "";
+            elemento.value = valorFecha;
+        }
+    });
+
+    // 7. Redirigimos automáticamente al usuario a la pestaña del formulario
     cambiarVista('formulario');
 }
 
