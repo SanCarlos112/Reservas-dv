@@ -113,7 +113,6 @@ function actualizarDashboard() {
     const ingresosTotalesEl = document.getElementById("dash-ingresos-totales");
     const saldosPendientesEl = document.getElementById("dash-saldos-pendientes");
 
-    // 🛡️ SEGURIDAD: Si aún no se descargan las reservas, salimos de forma segura sin romper la página
     if (!todasLasReservas || todasLasReservas.length === 0) {
         if (totalReservasEl) totalReservasEl.innerText = "0";
         if (ingresosTotalesEl) ingresosTotalesEl.innerText = "$0.00";
@@ -127,9 +126,14 @@ function actualizarDashboard() {
     todasLasReservas.forEach(r => {
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
-        const pago = parseFloat(r.Pago) || 0;
+        
+        // 🛡️ CORRECCIÓN AQUÍ: Aseguramos leer el abono posterior correctamente
+        const pago = parseFloat(r.Pago) || parseFloat(r.Pago_Liquidacion) || 0;
 
+        // El dinero que YA entró a tu bolsa es el anticipo + los abonos posteriores
         ingresos += (anticipo + pago);
+        
+        // El saldo que te deben es el total menos todo lo abonado
         pendientes += (total - anticipo - pago);
     });
 
@@ -137,6 +141,7 @@ function actualizarDashboard() {
     if (ingresosTotalesEl) ingresosTotalesEl.innerText = `$${ingresos.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
     if (saldosPendientesEl) saldosPendientesEl.innerText = `$${pendientes.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
 }
+
 
 // 🔥 FUNCIÓN CENTRAL: Filtra, Ordena y Dibuja una Tarjeta Única por Reservación
 function filtrarYRenderizarReservas() {
@@ -200,12 +205,18 @@ function filtrarYRenderizarReservas() {
     reservasFiltradas.forEach(r => {
         const card = document.createElement("div");
         
+        // 🛡️ REFUERZO DE VARIABLES: Aseguramos leer correctamente el campo del Excel
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
-        const pago = parseFloat(r.Pago) || 0;
+        
+        // Buscamos el pago ya sea como 'Pago' o la columna de liquidación correspondiente
+        const pago = parseFloat(r.Pago) || parseFloat(r.Pago_Liquidacion) || 0;
+        
+        // Operación matemática real: Total menos todo lo abonado
         const saldoPendiente = total - anticipo - pago;
 
         let etiquetaSaldo = "";
+        // Si el saldo pendiente es menor o igual a 0, la cuenta está saldada
         if (saldoPendiente > 0) {
             etiquetaSaldo = `<span style="background-color:#fff7ed; color:#c2410c; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space:nowrap;">⏳ Pendiente: $${saldoPendiente}</span>`;
         } else {
