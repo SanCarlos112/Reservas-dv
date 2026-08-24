@@ -125,18 +125,24 @@ function filtrarYRenderizarReservas() {
 
         // Filtro A: Buscador por Nombre o Teléfono
         const cumpleTexto = r.Nombre_Completo.toLowerCase().includes(textoBusqueda) || 
-                             (r.Telefono && r.Telefono.includes(textoBusqueda));
+                             (r.Telefono && String(r.Telefono).includes(textoBusqueda));
+
+        // 🛡️ CORRECCIÓN DE EXTRACCIÓN: Tomamos los primeros 10 caracteres (AAAA-MM-DD) de forma segura
+        const stringLlegada = r.Fecha_Llegada ? r.Fecha_Llegada.substring(0, 10) : "";
+        const stringSalida = r.Fecha_Salida ? r.Fecha_Salida.substring(0, 10) : "";
+
+        if (!stringLlegada || !stringSalida) return false;
+
+        // Convertimos a tiempo seguro de media noche local para la comparación
+        const inicioReserva = new Date(stringLlegada + "T00:00:00").getTime();
+        const finReserva = new Date(stringSalida + "T00:00:00").getTime();
 
         // Filtro B: Si NO hay fechas de auditoría puestas, ocultamos las reservaciones pasadas
         if (!fDesde && !fHasta) {
-            const fechaSalidaReserva = new Date(r.Fecha_Salida.split("T") + "T00:00:00").getTime();
-            return cumpleTexto && (fechaSalidaReserva >= hoyTimestamp);
+            return cumpleTexto && (finReserva >= hoyTimestamp);
         }
 
         // Filtro C: Si la Auditoría por Periodo está activa, validamos el rango elegido
-        const inicioReserva = new Date(r.Fecha_Llegada.split("T") + "T00:00:00").getTime();
-        const finReserva = new Date(r.Fecha_Salida.split("T") + "T00:00:00").getTime();
-        
         const limiteDesde = fDesde ? new Date(fDesde + "T00:00:00").getTime() : 0;
         const limiteHasta = fHasta ? new Date(fHasta + "T00:00:00").getTime() : Infinity;
 
@@ -148,7 +154,9 @@ function filtrarYRenderizarReservas() {
 
     // 2. Ordenar de forma cronológica: Las reservas más próximas a realizarse van primero
     reservasFiltradas.sort((a, b) => {
-        return new Date(a.Fecha_Llegada.split("T") + "T00:00:00") - new Date(b.Fecha_Llegada.split("T") + "T00:00:00");
+        const tA = new Date((a.Fecha_Llegada || "").substring(0, 10) + "T00:00:00").getTime();
+        const tB = new Date((b.Fecha_Llegada || "").substring(0, 10) + "T00:00:00").getTime();
+        return tA - tB;
     });
 
     // 3. Renderizar Tarjeta Única
@@ -168,21 +176,23 @@ function filtrarYRenderizarReservas() {
 
         let etiquetaSaldo = "";
         if (saldoPendiente > 0) {
-            etiquetaSaldo = `<span style="background-color:#fff7ed; color:#c2410c; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">⏳ Pendiente: $${saldoPendiente}</span>`;
+            etiquetaSaldo = `<span style="background-color:#fff7ed; color:#c2410c; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space:nowrap;">⏳ Pendiente: $${saldoPendiente}</span>`;
         } else {
-            etiquetaSaldo = `<span style="background-color:#ecfdf5; color:#15803d; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">✅ Liquidado</span>`;
+            etiquetaSaldo = `<span style="background-color:#ecfdf5; color:#15803d; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space:nowrap;">✅ Liquidado</span>`;
         }
 
-        // Formateo de fechas a DD-MM-AAAA para tu lectura cómoda
+        // 🔄 CONVERSIÓN DE FORMATO TOTALMENTE CORREGIDA: Pasa de AAAA-MM-DD a DD-MM-AAAA
         const formatearA_Español = (fTxt) => {
             if (!fTxt) return "---";
-            const p = fTxt.split("T")[0].split("-");
-            return `${p[2]}-${p[1]}-${p[0]}`;
+            const limpio = fTxt.substring(0, 10); // "AAAA-MM-DD"
+            const partes = limpio.split("-");     // ["AAAA", "MM", "DD"]
+            if (partes.length !== 3) return fTxt;
+            return `${partes[2]}-${partes[1]}-${partes[0]}`; // "DD-MM-AAAA"
         };
 
         card.innerHTML = `
             <div style="background-color:#ffffff; padding:16px; border-radius:16px; border:1px solid #f3f4f6; box-shadow:0 1px 3px rgba(0,0,0,0.05); margin-bottom:12px;">
-                <div style="display:flex; justify-between; align-items:flex-start; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px;">
                     <div style="flex:1;">
                         <h4 style="font-weight:bold; color:#1f2937; margin:0; font-size:15px;">${r.Nombre_Completo}</h4>
                         <p style="font-size:11px; color:#9ca3af; margin:2px 0 0 0;">📱 ${r.Telefono || "Sin teléfono"}</p>
@@ -195,9 +205,9 @@ function filtrarYRenderizarReservas() {
                     <div>🛬 <b>Salida:</b><br>${formatearA_Español(r.Fecha_Salida)}</div>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-                    <span style="color:#9ca3af;">Total Estancia: <b>$${total} MN</b></span>
-                    <button type="button" onclick="abrirModalModificar('${r.Num_Reservacion || r.id}')" style="background-color:#2563eb; color:#ffffff; padding:6px 12px; border:none; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer;">✏️ Actualizar / Cancelar</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; gap:8px;">
+                    <span style="color:#4b5563; font-size:13px;">Total: <b>$${total} MN</b></span>
+                    <button type="button" onclick="abrirModalModificar('${r.Num_Reservacion || r.id || r.Nombre_Completo}')" style="background-color:#2563eb; color:#ffffff; padding:8px 14px; border:none; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer; white-space:nowrap;">✏️ Actualizar / Cancelar</button>
                 </div>
             </div>
         `;
