@@ -307,9 +307,16 @@
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observaciones</label>
                 <textarea id="Observaciones" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"></textarea>
             </div>
-            <div class="pt-2">
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all">Guardar Reservación</button>
-            </div>
+            <div class="class=pt-2 flex justify-between items-center">
+                  <!-- Tu botón original de guardar cambios (ocupa el espacio principal) -->
+                  <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all">
+                      Guardar Reservación
+                  </button>
+                  <!-- Tu nuevo botón rojo de Cancelar (oculto por defecto con la clase 'hidden') -->
+                  <button type="button" id="btn-cancelar-reserva" class="hidden ml-4 py-3 px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all">
+                      ❌ Cancelar Reservación
+                  </button>
+              </div>
         </form>
     </div>
 
