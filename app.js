@@ -206,11 +206,14 @@ function filtrarYRenderizarReservas() {
         const card = document.createElement("div");
         
         // 🛡️ REFUERZO DE VARIABLES: Aseguramos leer correctamente el campo del Excel
+        console.log("💎 Analizando objeto reserva en tarjeta:", r);
+        
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
         
-        // Buscamos el pago ya sea como 'Pago' o la columna de liquidación correspondiente
-        const pago = parseFloat(r.Pago) || parseFloat(r.Pago_Liquidacion) || 0;
+        // 🔄 BUSQUEDA SEGURA: Evaluamos cuál propiedad del JSON contiene el dinero de la liquidación
+         const valorPagoRaw = r.Pago_Liquidacion || r.Pago || 0;
+         const pago = parseFloat(valorPagoRaw) || 0;
         
         // Operación matemática real: Total menos todo lo abonado
         const saldoPendiente = total - anticipo - pago;
