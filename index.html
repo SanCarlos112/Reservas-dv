@@ -234,9 +234,17 @@
 
     <!-- 4️⃣ VISTA: AGENDAR / FORMULARIO (INICIO) -->
     <div id="vista-formulario" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-2xl mx-auto">
-        <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">📝 Nueva Reservación</h2>
-        
+        <!-- 🆕 Cambiamos el título estático por uno dinámico -->
+        <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center justify-between gap-2">
+            <span id="titulo-formulario">📝 Nueva Reservación</span>
+            <!-- Botón discreto para salir si estamos editando -->
+            <button type="button" id="btn-cancelar-edicion" onclick="cancelarEdicion()" class="hidden text-xs bg-gray-100 hover:bg-gray-200 text-gray-500 px-3 py-1.5 rounded-lg font-bold">Volver a Lista</button>
+        </h2>
+
         <form id="form-reserva" onsubmit="guardarReserva(event)" class="space-y-4">
+            <!-- 🆕 CAMPO OCULTO: Guarda el Folio/ID de la reserva cuando se está editando -->
+            <input type="hidden" id="form-reserva-id" value="">
+            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Completo *</label>
