@@ -300,19 +300,30 @@ async function guardarReserva(event) {
     const textoOriginal = btn.innerText;
     btn.innerText = idReserva ? "Actualizando Excel..." : "Guardando..."; 
     btn.disabled = true;
-    
+
     try {
         const r = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(datos) });
         const res = await r.json();
+        
         if (res.status === "success") {
             alert(idReserva ? "🎉 ¡Reservación modificada con éxito!" : `🎉 ¡Éxito! Folio: ${res.id}`);
             
-            // Limpiamos el estado del formulario de vuelta a la normalidad
-            cancelarEdicion();
+            // 1. Limpiamos el formulario primero pero nos quedamos en espera
+            document.getElementById("form-reserva").reset();
+            document.getElementById("form-reserva-id").value = "";
+            document.getElementById("titulo-formulario").innerText = "📝 Nueva Reservación";
+            document.getElementById("btn-cancelar-edicion").classList.add("hidden");
+            document.getElementById("btn-cancelar-edicion").style.display = "none";
             
-            // Forzamos descarga de datos frescos y vamos al inicio
-            obtenerReservas();
-            cambiarVista('dashboard');
+            const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
+            if (btnGuardar) btnGuardar.innerText = "Guardar Reservación";
+
+            // 2. 🔥 Forzamos la descarga de datos frescos en internet y ESPERAMOS a que termine
+            await obtenerReservas();
+            
+            // 3. Ya con los datos nuevos en la mano, redirigimos visualmente a la lista actualizada
+            cambiarVista('lista');
+            
         } else { 
             alert("⚠️ Servidor: " + res.message); 
         }
