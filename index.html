@@ -206,23 +206,26 @@
             <input type="text" id="buscador-reservas" oninput="filtrarYRenderizarReservas()" placeholder="🔍 Buscar por huésped o teléfono..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
             
             <!-- Campos de Auditoría por Periodo -->
+            <!-- Campos de Auditoría por Periodo -->
             <div class="border-t border-gray-100 pt-3">
                 <p class="text-xs font-bold text-gray-400 uppercase mb-2">📋 Auditoría / Filtro por Periodo</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Desde:</label>
-                        <input type="date" id="auditoria-desde" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                
+                <!-- 🆕 CONTENEDOR EN UNA SOLA FILA HORIZONTAL -->
+                <div id="fila-auditoria-fechas" style="display: flex !important; gap: 8px !important; align-items: flex-end !important;">
+                    <div style="flex: 1 !important;">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase" style="margin-bottom: 2px;">Desde:</label>
+                        <input type="date" id="auditoria-desde" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" style="margin: 0 !important;">
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Hasta:</label>
-                        <input type="date" id="auditoria-hasta" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                    <div style="flex: 1 !important;">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase" style="margin-bottom: 2px;">Hasta:</label>
+                        <input type="date" id="auditoria-hasta" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" style="margin: 0 !important;">
                     </div>
                 </div>
-                <!-- Botón opcional para limpiar el filtro de auditoría -->
-                <button type="button" onclick="limpiarFiltroAuditoria()" class="w-full mt-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-lg text-xs transition-colors">Mostrar solo próximas (Limpiar Auditoría)</button>
+                <!-- Botón opcional para limpiar el filtro de auditoría -->                
+                <button type="button" onclick="limpiarFiltroAuditoria()" class="w-full mt-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-lg text-xs transition-colors">Mostrar solo próximas (Limpiar Auditoría)</button>
             </div>
         </div>
-        
+
         <!-- Contenedor de Tarjetas Únicas -->
         <div id="contenedor-cards" class="space-y-4">
             <!-- JavaScript inyectará las tarjetas aquí -->
