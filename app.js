@@ -352,7 +352,6 @@ function renderizarCalendario() {
     try {
         contenedor.innerHTML = "";
 
-        // Seguridad: Asegurar que mesVisualizado exista antes de usarlo
         if (typeof mesVisualizado === "undefined" || !(mesVisualizado instanceof Date)) {
             mesVisualizado = new Date();
         }
@@ -372,7 +371,6 @@ function renderizarCalendario() {
         const primerDiaSemana = new Date(año, mes, 1).getDay();
         const diasEnMes = new Date(año, mes + 1, 0).getDate();
 
-        // Cuadrado de días (Lunes a Domingo)
         const celdasVacias = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
         for (let i = 0; i < celdasVacias; i++) {
             const divVacio = document.createElement("div");
@@ -381,60 +379,53 @@ function renderizarCalendario() {
             contenedor.appendChild(divVacio);
         }
 
-    for (let i = 1; i <= diasEnMes; i++) {
-        const diaDiv = document.createElement("div");
-        diaDiv.innerText = i;
+        for (let i = 1; i <= diasEnMes; i++) {
+            const diaDiv = document.createElement("div");
+            diaDiv.innerText = i;
 
-        const mesStr = String(mes + 1).padStart(2, '0');
-        const diaStr = String(i).padStart(2, '0');
-        const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
+            const mesStr = String(mes + 1).padStart(2, '0');
+            const diaStr = String(i).padStart(2, '0');
+            const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
 
-        // Buscamos si el día está ocupado y obtenemos el objeto de la reserva junto con su índice
-        const resultadoBusqueda = obtenerReservaConIndice(fechaCeldaStr);
+            const resultadoBusqueda = (typeof obtenerReservaConIndice === "function") 
+                ? obtenerReservaConIndice(fechaCeldaStr) 
+                : null;
 
-        if (resultadoBusqueda) {
-            const { reserva, indice } = resultadoBusqueda;
-            
-            // Asignamos uno de los 5 colores basados en la posición de la reserva
-            const numeroColor = indice % 5;
-            diaDiv.className = `p-2 border text-center rounded celda-ocupada user-color-${numeroColor}`;
-            
-            diaDiv.onclick = () => {
-                // 🔄 CONVERSIÓN DE FORMATO: Pasamos de AAAA-MM-DD a DD-MM-AAAA para tu lectura fácil
-                const formatearFecha = (fechaTxt) => {
-                    if (!fechaTxt) return "No definida";
-                    const partes = fechaTxt.split("T")[0].split("-");
-                    return `${partes[2]}-${partes[1]}-${partes[0]}`; // DD-MM-AAAA
+            if (resultadoBusqueda) {
+                const { reserva, indice } = resultadoBusqueda;
+                const numeroColor = indice % 5;
+                
+                diaDiv.className = `p-2 border text-center rounded celda-ocupada user-color-${numeroColor}`;
+                
+                diaDiv.onclick = () => {
+                    // 🛡️ EXTRACCIÓN Y FORMATEO SEGURO A DD-MM-AAAA
+                    const formatearFecha = (fechaTxt) => {
+                        if (!fechaTxt) return "No definida";
+                        const limpio = String(fechaTxt).substring(0, 10); 
+                        const partes = limpio.split("-");                 
+                        if (partes.length !== 3) return fechaTxt;
+                        return `${partes[2]}-${partes[1]}-${partes[0]}`;   
+                    };
+
+                    const fLlegadaEspañol = formatearFecha(reserva.Fecha_Llegada);
+                    const fSalidaEspañol = formatearFecha(reserva.Fecha_Salida);
+
+                    alert(`📌 DETALLES DE LA RESERVACIÓN\n--------------------------------------------\n👤 Huésped: ${reserva.Nombre_Completo || "Desconocido"}\n📱 Teléfono: ${reserva.Telefono || "No registrado"}\n📅 Llegada: ${fLlegadaEspañol}\n📅 Salida: ${fSalidaEspañol}\n💵 Total: $${reserva.Total_Reserva || 0} MN\n💰 Anticipo: $${reserva.Anticipo || 0} MN\n📝 Obs: ${reserva.Observaciones || "Ninguna"}`);
                 };
+            } else {
+                diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
+                
+                diaDiv.onclick = () => {
+                    const formLlegada = document.getElementById("Fecha_Llegada");
+                    if (formLlegada) {
+                        formLlegada.value = fechaCeldaStr;
+                        cambiarVista('formulario');
+                    }
+                };
+            }
 
-                const fLlegadaEspañol = formatearFecha(reserva.Fecha_Llegada);
-                const fSalidaEspañol = formatearFecha(reserva.Fecha_Salida);
-
-                alert(`📌 DETALLES DE LA RESERVACIÓN
---------------------------------------------
-👤 Huésped: ${reserva.Nombre_Completo}
-📱 Teléfono: ${reserva.Telefono || "No registrado"}
-📅 Llegada: ${fLlegadaEspañol}
-📅 Salida: ${fSalidaEspañol}
-💵 Total: $${reserva.Total_Reserva} MN
-💰 Anticipo: $${reserva.Anticipo || 0} MN
-📝 Obs: ${reserva.Observaciones || "Ninguna"}`);
-            };
-        } else {
-            diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
-            
-            diaDiv.onclick = () => {
-                const formLlegada = document.getElementById("Fecha_Llegada");
-                if (formLlegada) {
-                    formLlegada.value = fechaCeldaStr;
-                    cambiarVista('formulario');
-                }
-            };
+            contenedor.appendChild(diaDiv);
         }
-
-        contenedor.appendChild(diaDiv);
-    }
-    
     } catch (error) {
         console.error("Falla en renderizarCalendario:", error);
         contenedor.innerHTML = `<p style="color:#dc2626; padding:20px; text-align:center;">⚠️ Error interno al dibujar el calendario: ${error.message}</p>`;
@@ -482,17 +473,18 @@ function formatearFecha(f) {
     return `${p[2]}/${p[1]}/${p[0]}`;
 }
 
+
 function obtenerReservaConIndice(fechaCalendarioStr) {
     if (!todasLasReservas || todasLasReservas.length === 0) return null;
 
     const tiempoCelda = new Date(fechaCalendarioStr + "T00:00:00").getTime();
 
-    // Buscamos la posición (índice) en el arreglo original de reservas
     const indice = todasLasReservas.findIndex(r => {
         if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
         
-        const stringLlegada = r.Fecha_Llegada.split("T")[0];
-        const stringSalida = r.Fecha_Salida.split("T")[0];
+        // Extracción limpia y segura de "AAAA-MM-DD"
+        const stringLlegada = String(r.Fecha_Llegada).substring(0, 10);
+        const stringSalida = String(r.Fecha_Salida).substring(0, 10);
 
         const inicioExistente = new Date(stringLlegada + "T00:00:00").getTime();
         const finExistente = new Date(stringSalida + "T00:00:00").getTime();
@@ -508,6 +500,7 @@ function obtenerReservaConIndice(fechaCalendarioStr) {
     }
     return null;
 }
+
 
 // ✏️ Se ejecuta al pulsar el botón azul "Actualizar / Cancelar"
 function abrirModalModificar(identificador) {
