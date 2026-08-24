@@ -44,23 +44,22 @@ function obtenerVistaActual() {
 }
 
 /**
- * Controla la navegación del sistema iluminando dinámicamente el botón del módulo activo.
+ * Controla la navegación del sistema ocultando/mostrando las vistas con los IDs correctos
+ * e iluminando dinámicamente el botón del módulo activo.
  */
 function cambiarVista(vista) {
     console.log("🔄 [Navegación] Cambiando a la vista:", vista);
 
-    // ==========================================
-    // 1. TU LÓGICA DE SECCIONES (Modo Seguro)
-    // ==========================================
-    // Aquí vamos a poner los IDs EXACTOS de tus contenedores. 
-    // He incluido las variantes comunes de tu proyecto para asegurar que encuentre el correcto:
-    
-    const divDashboard = document.getElementById('dashboard') || document.getElementById('dashboard-view');
-    const divCalendario = document.getElementById('calendario') || document.getElementById('calendario-view');
-    const divLista = document.getElementById('lista') || document.getElementById('lista-reservas') || document.getElementById('modulo-lista');
-    const divFormulario = document.getElementById('formulario') || document.getElementById('formulario-view');
+    // =========================================================
+    // 1. CONTROL DE CONTENEDORES (Usando los IDs reales de tu HTML)
+    // =========================================================
+    // Buscamos los contenedores soportando el prefijo "vista-" que usa tu proyecto
+    const divDashboard = document.getElementById('vista-dashboard') || document.getElementById('dashboard');
+    const divCalendario = document.getElementById('vista-calendario') || document.getElementById('calendario');
+    const divLista = document.getElementById('vista-lista') || document.getElementById('lista');
+    const divFormulario = document.getElementById('vista-formulario') || document.getElementById('formulario');
 
-    // Usamos el método de remoción de clases que maneja tu Tailwind CSS
+    // Mostramos u ocultamos alternando la clase 'hidden' de Tailwind CSS
     if (divDashboard) {
         if (vista === 'dashboard') divDashboard.classList.remove('hidden');
         else divDashboard.classList.add('hidden');
@@ -92,17 +91,18 @@ function cambiarVista(vista) {
         'formulario': 'btn-nuevo'
     };
 
-    // Recorremos todos los botones para dejarlos en estado "Apagado"
+    // Recorremos todos los botones para dejarlos en estado "Apagado" (Gris / Normal)
     Object.keys(botonesMenu).forEach(claveVista => {
         const idBoton = botonesMenu[claveVista];
         const boton = document.getElementById(idBoton);
         
         if (boton) {
             boton.classList.remove('active');
+            // Estilos limpios para el botón inactivo
             boton.style.backgroundColor = "transparent";
-            boton.style.color = "#6b7280";          
-            boton.style.fontWeight = "500";         
-            boton.style.borderBottom = "none";      
+            boton.style.color = "#6b7280";          // Texto Gris
+            boton.style.fontWeight = "500";         // Grosor de letra normal
+            boton.style.borderBottom = "none";      // Sin línea inferior
         }
     });
 
@@ -112,10 +112,11 @@ function cambiarVista(vista) {
     
     if (botonActivo) {
         botonActivo.classList.add('active');
-        botonActivo.style.backgroundColor = "#eff6ff"; 
-        botonActivo.style.color = "#1d4ed8";          
-        botonActivo.style.fontWeight = "700";         
-        botonActivo.style.borderBottom = "3px solid #1d4ed8"; 
+        // Estilos destacados para el botón activo
+        botonActivo.style.backgroundColor = "#eff6ff"; // Fondo azul muy claro
+        botonActivo.style.color = "#1d4ed8";          // Texto Azul fuerte
+        botonActivo.style.fontWeight = "700";         // Letra en Negrita
+        botonActivo.style.borderBottom = "3px solid #1d4ed8"; // Línea inferior azul indicadora
     }
 }
 
