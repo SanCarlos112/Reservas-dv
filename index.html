@@ -200,10 +200,33 @@
 
     <!-- 3️⃣ VISTA: LISTA DE RESERVAS -->
     <div id="vista-lista" class="hidden space-y-4">
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-2">
-            <input type="text" id="buscador-reservas" oninput="filtrarReservas()" placeholder="🔍 Buscar por nombre o teléfono..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+        <!-- Panel de Control: Buscador y Auditoría -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+            <!-- Buscador por Texto -->
+            <input type="text" id="buscador-reservas" oninput="filtrarYRenderizarReservas()" placeholder="🔍 Buscar por huésped o teléfono..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+            
+            <!-- Campos de Auditoría por Periodo -->
+            <div class="border-t border-gray-100 pt-3">
+                <p class="text-xs font-bold text-gray-400 uppercase mb-2">📋 Auditoría / Filtro por Periodo</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Desde:</label>
+                        <input type="date" id="auditoria-desde" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Hasta:</label>
+                        <input type="date" id="auditoria-hasta" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                    </div>
+                </div>
+                <!-- Botón opcional para limpiar el filtro de auditoría -->
+                <button type="button" onclick="limpiarFiltroAuditoria()" class="w-full mt-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-lg text-xs transition-colors">Mostrar solo próximas (Limpiar Auditoría)</button>
+            </div>
         </div>
-        <div id="contenedor-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        
+        <!-- Contenedor de Tarjetas Únicas -->
+        <div id="contenedor-cards" class="space-y-4">
+            <!-- JavaScript inyectará las tarjetas aquí -->
+        </div>
     </div>
 
     <!-- 4️⃣ VISTA: AGENDAR / FORMULARIO (INICIO) -->
