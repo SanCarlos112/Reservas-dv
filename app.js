@@ -44,38 +44,32 @@ function obtenerVistaActual() {
 }
 
 /**
- * Controla la navegación del sistema ocultando/mostrando secciones 
- * e iluminando dinámicamente el botón del módulo activo.
- * @param {string} vista - Nombre de la vista ('dashboard', 'calendario', 'lista', 'formulario')
+ * Controla la navegación del sistema iluminando dinámicamente el botón del módulo activo
+ * sin interferir con los contenedores originales del HTML.
  */
 function cambiarVista(vista) {
     console.log("🔄 [Navegación] Cambiando a la vista:", vista);
 
-    // ==========================================
-    // 1. CONTROL DE SECCIONES (MOSTRAR / OCULTAR)
-    // ==========================================
-    // Definimos la lista de IDs de las secciones principales en tu HTML
-    const secciones = ['dashboard', 'calendario', 'lista', 'formulario'];
+    // =================================================================
+    // 1. TU LÓGICA ORIGINAL DE SECCIONES (Restaurada para evitar fallos)
+    // =================================================================
+    // NOTA: Si tú manejabas las pantallas con clases como 'hidden' o con un switch,
+    // asegúrate de dejar aquí abajo las líneas exactas que tenías antes.
+    
+    const divDashboard = document.getElementById('dashboard-view') || document.getElementById('dashboard');
+    const divCalendario = document.getElementById('calendario-view') || document.getElementById('calendario');
+    const divLista = document.getElementById('lista-reservas') || document.getElementById('lista');
+    const divFormulario = document.getElementById('formulario-view') || document.getElementById('formulario');
 
-    secciones.forEach(idSeccion => {
-        const elementoSeccion = document.getElementById(idSeccion);
-        if (elementoSeccion) {
-            if (idSeccion === vista) {
-                // Mostramos la sección activa quitando la clase hidden (o forzando block)
-                elementoSeccion.classList.remove('hidden');
-                elementoSeccion.style.display = 'block';
-            } else {
-                // Ocultamos las secciones inactivas
-                elementoSeccion.classList.add('hidden');
-                elementoSeccion.style.display = 'none';
-            }
-        }
-    });
+    if (divDashboard) divDashboard.style.display = (vista === 'dashboard') ? 'block' : 'none';
+    if (divCalendario) divCalendario.style.display = (vista === 'calendario') ? 'block' : 'none';
+    if (divLista) divLista.style.display = (vista === 'lista') ? 'block' : 'none';
+    if (divFormulario) divFormulario.style.display = (vista === 'formulario') ? 'block' : 'none';
+
 
     // ==========================================
     // 2. ILUMINACIÓN DINÁMICA DEL MENÚ DE MÓDULOS
     // ==========================================
-    // Mapeo exacto entre el nombre de la vista y el ID de sus botones en index.html
     const botonesMenu = {
         'dashboard': 'btn-dashboard',
         'calendario': 'btn-calendario',
@@ -83,32 +77,30 @@ function cambiarVista(vista) {
         'formulario': 'btn-nuevo'
     };
 
-    // Recorremos todos los botones para dejarlos en estado "Apagado" (Gris / Normal)
+    // Recorremos todos los botones para dejarlos en estado "Apagado"
     Object.keys(botonesMenu).forEach(claveVista => {
         const idBoton = botonesMenu[claveVista];
         const boton = document.getElementById(idBoton);
         
         if (boton) {
             boton.classList.remove('active');
-            // Estilos limpios para el botón inactivo
             boton.style.backgroundColor = "transparent";
-            boton.style.color = "#6b7280";          // Texto Gris
-            boton.style.fontWeight = "500";         // Grosor de letra normal
-            boton.style.borderBottom = "none";      // Sin línea inferior
+            boton.style.color = "#6b7280";          
+            boton.style.fontWeight = "500";         
+            boton.style.borderBottom = "none";      
         }
     });
 
-    // Encendemos únicamente el botón del módulo seleccionado por el usuario
+    // Encendemos únicamente el botón del módulo seleccionado
     const idActivo = botonesMenu[vista];
     const botonActivo = document.getElementById(idActivo);
     
     if (botonActivo) {
         botonActivo.classList.add('active');
-        // Estilos destacados para el botón activo
-        botonActivo.style.backgroundColor = "#eff6ff"; // Fondo azul muy claro
-        botonActivo.style.color = "#1d4ed8";          // Texto Azul fuerte
-        botonActivo.style.fontWeight = "700";         // Letra en Negrita
-        botonActivo.style.borderBottom = "3px solid #1d4ed8"; // Línea inferior azul indicadora
+        botonActivo.style.backgroundColor = "#eff6ff"; 
+        botonActivo.style.color = "#1d4ed8";          
+        botonActivo.style.fontWeight = "700";         
+        botonActivo.style.borderBottom = "3px solid #1d4ed8"; 
     }
 }
 
