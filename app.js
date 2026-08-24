@@ -76,25 +76,32 @@ async function obtenerReservas() {
     const contenedorCards = document.getElementById("contenedor-cards");
     
     if (contenedorCards) {
-        contenedorCards.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservaciones desde Google Sheets...</p>`;
+        // Nota: Solo pintamos el mensaje si el contenedor está totalmente vacío 
+        // para no parpadear la pantalla si el usuario ya está viendo datos.
+        if (!contenedorCards.innerHTML || todasLasReservas.length === 0) {
+            contenedorCards.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservaciones desde Google Sheets...</p>`;
+        }
     }
 
     try {
-        const respuesta = await fetch(WEB_APP_URL);
+        // 🔥 ROMPE-CACHÉ: Agregamos un sello de tiempo único (milisegundos actuales) al final de la URL
+        // Esto obliga al navegador del celular a descargar datos en vivo SI REGLA DE EXCEPCIÓN.
+        const urlConTiempoReal = `${WEB_APP_URL}?_=${new Date().getTime()}`;
+        
+        const respuesta = await fetch(urlConTiempoReal);
         todasLasReservas = await respuesta.json();
         
-        // 🔄 ACTUALIZACIÓN COMPONENTES
+        // 🔄 ACTUALIZACIÓN COMPONENTES EN PANTALLA
         actualizarDashboard();
         renderizarCalendario(); 
         
-        // 🔥 CORRECCIÓN: Llamamos a la nueva función unificada en vez de la vieja renderizarCards
         if (typeof filtrarYRenderizarReservas === "function") {
             filtrarYRenderizarReservas();
         }
         
     } catch (e) { 
         console.error("Error al descargar reservas:", e); 
-        if (contenedorCards) {
+        if (contenedorCards && todasLasReservas.length === 0) {
             contenedorCards.innerHTML = `<p style="color:#dc2626; text-align:center; padding:20px; font-weight:500;">❌ Error al conectar con el servidor. Revisa tu conexión.</p>`;
         }
     }
