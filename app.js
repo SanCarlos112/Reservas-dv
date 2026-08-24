@@ -384,6 +384,11 @@ async function guardarReserva(event) {
             document.getElementById("titulo-formulario").innerText = "📝 Nueva Reservación";
             document.getElementById("btn-cancelar-edicion").classList.add("hidden");
             document.getElementById("btn-cancelar-edicion").style.display = "none";
+
+            document.getElementById("btn-cancelar-edicion").style.display = "none";
+            // 🛠️ LÍNEA NUEVA: Ocultamos el botón rojo de cancelación tras una operación exitosa
+            const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
+            if (btnCancelarReserva) btnCancelarReserva.classList.add("hidden");
             
             const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
             if (btnGuardar) btnGuardar.innerText = "Guardar Reservación";
@@ -651,9 +656,23 @@ function abrirModalModificar(identificador) {
         }
     });
 
-    // 7. Redirigimos automáticamente al usuario a la pestaña del formulario
+    // 7. 🚨 CONTROL DEL BOTÓN ROJO DE CANCELACIÓN (Aparece solo en edición)
+    const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
+    if (btnCancelarReserva) {
+        btnCancelarReserva.classList.remove("hidden"); 
+    
+        // Programamos la acción de clic de forma aislada
+        btnCancelarReserva.onclick = function() {
+            if (confirm("⚠️ ¿Estás seguro de que deseas CANCELAR esta reservación? El espacio quedará liberado.")) {
+                ejecutarCancelacion(reserva.Num_Reservacion);
+            }
+        };
+    }
+
+    // 8. Redirigimos automáticamente al usuario a la pestaña del formulario
     cambiarVista('formulario');
 }
+
 
 // 🔙 Función por si el usuario decide no modificar nada y quiere regresar a la lista
 function cancelarEdicion() {
@@ -669,3 +688,57 @@ function cancelarEdicion() {
     cambiarVista('lista');
 }
 
+/**
+ * Envía la orden de cancelación al servidor de Google Sheets
+ * @param {string|number} idReservacion - El Folio o número de la reservación
+ */
+async function ejecutarCancelacion(idReservacion) {
+    console.log("❌ [Cancelación] Solicitando cancelar folio:", idReservacion);
+    
+    // Cambiamos el texto del botón rojo para dar feedback visual
+    const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
+    if (btnCancelarReserva) {
+        btnCancelarReserva.innerText = "⏳ Cancelando...";
+        btnCancelarReserva.disabled = true;
+    }
+
+    // Estructuramos los datos que va a recibir tu archivo Código.gs
+    const datos = {
+        action: "cancelar",
+        id: idReservacion
+    };
+
+    try {
+        // Hacemos el envío de datos a tu URL de Google Apps Script
+        const r = await fetch(WEB_APP_URL, { 
+            method: "POST", 
+            body: JSON.stringify(datos) 
+        });
+        const res = await r.json();
+
+        if (res.status === "success") {
+            alert("⚠️ Reservación cancelada y espacio liberado con éxito.");
+            
+            // Limpiamos el formulario por seguridad
+            document.getElementById("form-reserva").reset();
+            document.getElementById("form-reserva-id").value = "";
+            document.getElementById("titulo-formulario").innerText = "📋 Nueva Reservación";
+            if (btnCancelarReserva) btnCancelarReserva.classList.add("hidden");
+
+            // Recargamos los datos frescos desde el Excel y regresamos a la lista
+            await obtenerReservas();
+            cambiarVista('lista');
+        } else {
+            alert("❌ Hubo un detalle al procesar la cancelación en el servidor.");
+        }
+    } catch (error) {
+        console.error("Error en proceso de cancelación:", error);
+        alert("❌ Error de red al intentar conectar con el servidor de cancelaciones.");
+    } finally {
+        // Restauramos el estado del botón por si acaso
+        if (btnCancelarReserva) {
+            btnCancelarReserva.innerText = "❌ Cancelar Reservación";
+            btnCancelarReserva.disabled = false;
+        }
+    }
+}
