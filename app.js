@@ -260,47 +260,68 @@ function filtrarReservas() {
 async function guardarReserva(event) {
     event.preventDefault();
 
-    // 1. OBTENER VALORES DE FECHAS PARA VALIDACIÓN
     const fLlegadaTxt = document.getElementById("Fecha_Llegada")?.value;
     const fSalidaTxt = document.getElementById("Fecha_Salida")?.value;
+    const idReserva = document.getElementById("form-reserva-id").value; // 🆕 Captura si es edición
 
     if (!fLlegadaTxt || !fSalidaTxt) {
         alert("⚠️ Por favor, selecciona las fechas de llegada y salida.");
         return;
     }
 
-    const fechaLlegada = new Date(fLlegadaTxt + "T00:00:00");
-    const fechaSalida = new Date(fSalidaTxt + "T00:00:00");
+    const fechaLlegada = new Date(fLlegadaTxt + "T00:00:00").getTime();
+    const fechaSalida = new Date(fSalidaTxt + "T00:00:00").getTime();
 
-    // 2. VALIDACIÓN 1: FECHA LOGICA
     if (fechaSalida <= fechaLlegada) {
         alert("❌ Error: La fecha de salida debe ser posterior a la fecha de llegada.");
         return;
     }
 
-    // 3. VALIDACIÓN 2: DISPONIBILIDAD (DÍAS OCUPADOS)
-    if (verificarConflictoFechas(fLlegadaTxt, fSalidaTxt)) {
-        alert("🚫 ¡Conflicto de fechas! Los días seleccionados ya se encuentran ocupados por otra reservación.");
+    // 🛡️ VALIDACIÓN DE CHOQUE: Solo validamos disponibilidad si es una reserva NUEVA 
+    // (si estamos editando al mismo huésped, omitimos para que no choque consigo mismo)
+    if (!idReserva && verificarConflictoFechas(fLlegadaTxt, fSalidaTxt)) {
+        alert("🚫 ¡Conflicto de fechas! Los días seleccionados ya se encuentran ocupados.");
         return;
     }
 
-    // 4. PROCESO DE GUARDADO TRADICIONAL
     const campos = ["Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", "Total_Reserva", "Anticipo", "Fecha_Anticipo", "Pago", "Fecha_Pago", "Pago_Limpieza", "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", "Fecha_Comision", "Observaciones"];
     let datos = {};
     campos.forEach(id => { const el = document.getElementById(id); datos[id] = el ? el.value : ""; });
     
-    const btn = event.target.querySelector("button");
-    btn.innerText = "Guardando..."; btn.disabled = true;
+    // 🆕 INYECTAMOS EL ID DE ACCIÓN PARA GOOGLE APPS SCRIPT
+    if (idReserva) {
+        datos["Num_Reservacion"] = idReserva;
+        datos["accion"] = "editar"; // Le avisa al servidor que busque la fila y la reescriba
+    } else {
+        datos["accion"] = "crear";
+    }
+    
+    const btn = event.target.querySelector("button[type='submit']");
+    const textoOriginal = btn.innerText;
+    btn.innerText = idReserva ? "Actualizando Excel..." : "Guardando..."; 
+    btn.disabled = true;
     
     try {
         const r = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(datos) });
         const res = await r.json();
         if (res.status === "success") {
-            alert(`🎉 ¡Éxito! Folio: ${res.id}`);
-            document.getElementById("form-reserva").reset();
+            alert(idReserva ? "🎉 ¡Reservación modificada con éxito!" : `🎉 ¡Éxito! Folio: ${res.id}`);
+            
+            // Limpiamos el estado del formulario de vuelta a la normalidad
+            cancelarEdicion();
+            
+            // Forzamos descarga de datos frescos y vamos al inicio
+            obtenerReservas();
             cambiarVista('dashboard');
-        } else { alert(res.message); }
-    } catch (e) { alert("Error de red"); } finally { btn.innerText = "Guardar Reservación"; btn.disabled = false; }
+        } else { 
+            alert("⚠️ Servidor: " + res.message); 
+        }
+    } catch (e) { 
+        alert("❌ Error de red al conectar con Google Sheets."); 
+    } finally { 
+        btn.innerText = textoOriginal; 
+        btn.disabled = false; 
+    }
 }
 
 // 🔑 FUNCIÓN AUXILIAR: Verifica si el rango elegido choca con otra reserva
@@ -487,3 +508,71 @@ function obtenerReservaConIndice(fechaCalendarioStr) {
     }
     return null;
 }
+
+// ✏️ Se ejecuta al pulsar el botón azul "Actualizar / Cancelar"
+function abrirModalModificar(identificador) {
+    if (!todasLasReservas || todasLasReservas.length === 0) return;
+
+    // Buscamos la reserva por Folio, ID o por Nombre si no hay ID único
+    const reserva = todasLasReservas.find(r => 
+        r.Num_Reservacion == identificador || r.id == identificador || r.Nombre_Completo == identificador
+    );
+
+    if (!reserva) {
+        alert("⚠️ No se encontraron los datos de esta reservación.");
+        return;
+    }
+
+    // 1. Cambiamos visualmente el título del formulario y encendemos el botón de volver
+    document.getElementById("titulo-formulario").innerText = "✏️ Modificar / Cancelar Reservación";
+    document.getElementById("btn-cancelar-edicion").classList.remove("hidden");
+    document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
+
+    // 2. Cambiamos el texto del botón de envío principal
+    const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
+    if (btnGuardar) btnGuardar.innerText = "Guardar Cambios en la Reserva";
+
+    // 3. Guardamos el ID en el campo oculto para que el sistema sepa que es una EDICIÓN
+    document.getElementById("form-reserva-id").value = reserva.Num_Reservacion || reserva.id || "";
+
+    // 4. Mapeamos y auto-rellenamos cada campo del formulario con los datos del Excel
+    const campos = [
+        "Nombre_Completo", "Telefono", "Total_Reserva", "Anticipo", 
+        "Fecha_Anticipo", "Pago", "Fecha_Pago", "Pago_Limpieza", 
+        "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", 
+        "Fecha_Comision", "Observaciones"
+    ];
+
+    campos.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.value = reserva[id] || "";
+        }
+    });
+
+    // 5. Tratamiento especial para las fechas de Llegada y Salida (limpieza de formato 'T')
+    if (document.getElementById("Fecha_Llegada") && reserva.Fecha_Llegada) {
+        document.getElementById("Fecha_Llegada").value = reserva.Fecha_Llegada.substring(0, 10);
+    }
+    if (document.getElementById("Fecha_Salida") && reserva.Fecha_Salida) {
+        document.getElementById("Fecha_Salida").value = reserva.Fecha_Salida.substring(0, 10);
+    }
+
+    // 6. Redirigimos automáticamente al usuario a la pestaña del formulario
+    cambiarVista('formulario');
+}
+
+// 🔙 Función por si el usuario decide no modificar nada y quiere regresar a la lista
+function cancelarEdicion() {
+    document.getElementById("form-reserva").reset();
+    document.getElementById("form-reserva-id").value = "";
+    document.getElementById("titulo-formulario").innerText = "📝 Nueva Reservación";
+    document.getElementById("btn-cancelar-edicion").classList.add("hidden");
+    document.getElementById("btn-cancelar-edicion").style.display = "none";
+    
+    const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
+    if (btnGuardar) btnGuardar.innerText = "Guardar Reservación";
+    
+    cambiarVista('lista');
+}
+
