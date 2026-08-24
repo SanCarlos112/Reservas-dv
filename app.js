@@ -355,17 +355,31 @@ async function guardarReserva(event) {
         return;
     }
 
-    const campos = ["Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", "Total_Reserva", "Anticipo", "Fecha_Anticipo", "Pago", "Fecha_Pago", "Pago_Limpieza", "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", "Fecha_Comision", "Observaciones"];
+        // 358: Arreglo de campos alineado de forma idéntica con el Backend (Google Sheets)
+    const campos = [
+        "Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", "Total_Reserva", 
+        "Anticipo", "Fecha_Anticipo", "Pago_Limpieza", "Fecha_Limpieza", 
+        "Pago_Brazaletes", "Comision_Pagada", "Fecha_Comision", "Observaciones"
+    ];
+    
     let datos = {};
     campos.forEach(id => { const el = document.getElementById(id); datos[id] = el ? el.value : ""; });
-    
-    // 🆕 INYECTAMOS EL ID DE ACCIÓN PARA GOOGLE APPS SCRIPT
+
+    // 🛡️ TRATAMIENTO ESPECIAL DE LIQUIDACIÓN: Mapeamos los IDs del HTML a las variables del Backend
+    const elPago = document.getElementById("Pago");
+    datos["Pago_Liquidacion"] = elPago ? elPago.value : "";
+
+    const elFechaPago = document.getElementById("Fecha_Pago");
+    datos["Fecha_Pago_Liq"] = elFechaPago ? elFechaPago.value : "";
+
+    // 🔄 INYECTAMOS EL ID DE ACCIÓN COMPATIBLE CON TU CÓDIGO.GS
     if (idReserva) {
-        datos["Num_Reservacion"] = idReserva;
-        datos["accion"] = "editar"; // Le avisa al servidor que busque la fila y la reescriba
+        datos["idReserva"] = idReserva; // 🚨 Cambiado de "Num_Reservacion" a "idReserva" para que active la edición
+        datos["accion"] = "editar";
     } else {
         datos["accion"] = "crear";
     }
+
     
     const btn = event.target.querySelector("button[type='submit']");
     const textoOriginal = btn.innerText;
