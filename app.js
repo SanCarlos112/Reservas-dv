@@ -43,7 +43,7 @@ function cambiarVista(vistaDestino) {
         } else {
             elementoDestino.style.display = 'grid';
             if (vistaDestino === 'calendario') renderizarCalendario();
-            if (vistaDestino === 'lista') renderizarCards(todasLasReservas);
+            if (vistaDestino === 'lista') filtrarYRenderizarReservas(todasLasReservas);
         }
     }
 }
@@ -104,57 +104,111 @@ function actualizarDashboard() {
     if (saldosPendientesEl) saldosPendientesEl.innerText = `$${pendientes.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
 }
 
-function renderizarCards(reservas) {
+// 🔥 FUNCIÓN CENTRAL: Filtra, Ordena y Dibuja una Tarjeta Única por Reservación
+function filtrarYRenderizarReservas() {
     const contenedor = document.getElementById("contenedor-cards");
     if (!contenedor) return;
 
-    contenedor.innerHTML = "";
+    const textoBusqueda = document.getElementById("buscador-reservas")?.value.toLowerCase() || "";
+    const fDesde = document.getElementById("auditoria-desde")?.value || "";
+    const fHasta = document.getElementById("auditoria-hasta")?.value || "";
 
-    // 🛡️ SEGURIDAD: Si no hay datos todavía, mostramos un aviso limpio
-    if (!reservas || reservas.length === 0) {
-        contenedor.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservaciones desde Google Sheets...</p>`;
+    // Capturamos el día de hoy a las 00:00:00 local para comparar vencimientos
+    const hoyTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
+
+    // 1. Filtrar las reservas de la base de datos
+    let reservasFiltradas = todasLasReservas.filter(r => {
+        if (!r.Nombre_Completo) return false;
+
+        // Filtro A: Buscador por Nombre o Teléfono
+        const cumpleTexto = r.Nombre_Completo.toLowerCase().includes(textoBusqueda) || 
+                             (r.Telefono && r.Telefono.includes(textoBusqueda));
+
+        // Filtro B: Si NO hay fechas de auditoría puestas, ocultamos las reservaciones pasadas
+        if (!fDesde && !fHasta) {
+            const fechaSalidaReserva = new Date(r.Fecha_Salida.split("T") + "T00:00:00").getTime();
+            return cumpleTexto && (fechaSalidaReserva >= hoyTimestamp);
+        }
+
+        // Filtro C: Si la Auditoría por Periodo está activa, validamos el rango elegido
+        const inicioReserva = new Date(r.Fecha_Llegada.split("T") + "T00:00:00").getTime();
+        const finReserva = new Date(r.Fecha_Salida.split("T") + "T00:00:00").getTime();
+        
+        const limiteDesde = fDesde ? new Date(fDesde + "T00:00:00").getTime() : 0;
+        const limiteHasta = fHasta ? new Date(fHasta + "T00:00:00").getTime() : Infinity;
+
+        // La reserva se muestra si choca o cae dentro del periodo auditado
+        const cumplePeriodo = (inicioReserva <= limiteHasta && finReserva >= limiteDesde);
+
+        return cumpleTexto && cumplePeriodo;
+    });
+
+    // 2. Ordenar de forma cronológica: Las reservas más próximas a realizarse van primero
+    reservasFiltradas.sort((a, b) => {
+        return new Date(a.Fecha_Llegada.split("T") + "T00:00:00") - new Date(b.Fecha_Llegada.split("T") + "T00:00:00");
+    });
+
+    // 3. Renderizar Tarjeta Única
+    contenedor.innerHTML = "";
+    if (reservasFiltradas.length === 0) {
+        contenedor.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">📋 No se encontraron reservaciones para este criterio.</p>`;
         return;
     }
 
-    reservas.forEach(r => {
+    reservasFiltradas.forEach(r => {
         const card = document.createElement("div");
-        card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3";
         
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
         const pago = parseFloat(r.Pago) || 0;
         const saldoPendiente = total - anticipo - pago;
 
-        // 🎨 OPCIÓN 3 INTEGRADA: Alerta visual si tiene saldo pendiente
         let etiquetaSaldo = "";
         if (saldoPendiente > 0) {
-            etiquetaSaldo = `<span class="px-2.5 py-1 text-xs font-bold bg-amber-50 text-amber-700 rounded-lg">⏳ Pendiente: $${saldoPendiente}</span>`;
+            etiquetaSaldo = `<span style="background-color:#fff7ed; color:#c2410c; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">⏳ Pendiente: $${saldoPendiente}</span>`;
         } else {
-            etiquetaSaldo = `<span class="px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 rounded-lg">✅ Liquidado</span>`;
+            etiquetaSaldo = `<span style="background-color:#ecfdf5; color:#15803d; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">✅ Liquidado</span>`;
         }
 
-        const fLlegada = r.Fecha_Llegada ? r.Fecha_Llegada.split("T")[0] : "---";
-        const fSalida = r.Fecha_Salida ? r.Fecha_Salida.split("T")[0] : "---";
+        // Formateo de fechas a DD-MM-AAAA para tu lectura cómoda
+        const formatearA_Español = (fTxt) => {
+            if (!fTxt) return "---";
+            const p = fTxt.split("T")[0].split("-");
+            return `${p[2]}-${p[1]}-${p[0]}`;
+        };
 
         card.innerHTML = `
-            <div class="flex justify-between items-start">
-                <div>
-                    <h4 class="font-bold text-gray-800 text-base">${r.Nombre_Completo}</h4>
-                    <p class="text-xs text-gray-400 mt-0.5">📱 ${r.Telefono || "Sin teléfono"}</p>
+            <div style="background-color:#ffffff; padding:16px; border-radius:16px; border:1px solid #f3f4f6; box-shadow:0 1px 3px rgba(0,0,0,0.05); margin-bottom:12px;">
+                <div style="display:flex; justify-between; align-items:flex-start; margin-bottom:8px;">
+                    <div style="flex:1;">
+                        <h4 style="font-weight:bold; color:#1f2937; margin:0; font-size:15px;">${r.Nombre_Completo}</h4>
+                        <p style="font-size:11px; color:#9ca3af; margin:2px 0 0 0;">📱 ${r.Telefono || "Sin teléfono"}</p>
+                    </div>
+                    <div>${etiquetaSaldo}</div>
                 </div>
-                ${etiquetaSaldo}
-            </div>
-            <div class="grid grid-cols-2 gap-2 py-2 border-y border-gray-50 text-xs text-gray-600">
-                <div>🛫 <span class="font-medium">Llegada:</span><br><span class="text-gray-800 font-bold">${fLlegada}</span></div>
-                <div>🛬 <span class="font-medium">Salida:</span><br><span class="text-gray-800 font-bold">${fSalida}</span></div>
-            </div>
-            <div class="flex justify-between items-center text-xs pt-1">
-                <span class="text-gray-400 font-medium">Total de la estancia:</span>
-                <span class="text-gray-800 font-bold text-sm">$${total} MN</span>
+                
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #f9fafb; border-bottom:1px solid #f9fafb; font-size:12px; color:#4b5563; margin-bottom:8px;">
+                    <div>🛫 <b>Llegada:</b><br>${formatearA_Español(r.Fecha_Llegada)}</div>
+                    <div>🛬 <b>Salida:</b><br>${formatearA_Español(r.Fecha_Salida)}</div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                    <span style="color:#9ca3af;">Total Estancia: <b>$${total} MN</b></span>
+                    <button type="button" onclick="abrirModalModificar('${r.Num_Reservacion || r.id}')" style="background-color:#2563eb; color:#ffffff; padding:6px 12px; border:none; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer;">✏️ Actualizar / Cancelar</button>
+                </div>
             </div>
         `;
         contenedor.appendChild(card);
     });
+}
+
+// Auxiliar para resetear los rangos de auditoría
+function limpiarFiltroAuditoria() {
+    const d = document.getElementById("auditoria-desde");
+    const h = document.getElementById("auditoria-hasta");
+    if (d) d.value = "";
+    if (h) h.value = "";
+    filtrarYRenderizarReservas();
 }
 
 function filtrarReservas() {
