@@ -209,9 +209,10 @@ function filtrarYRenderizarReservas() {
         if (!r.Nombre_Completo) return false;
 
         // Filtro A: Buscador por Nombre o Teléfono
-        const cumpleTexto = r.Nombre_Completo.toLowerCase().includes(textoBusqueda) || 
-                             (r.Telefono && String(r.Telefono).includes(textoBusqueda));
-
+        const nombreTexto = r.Nombre_Completo ? String(r.Nombre_Completo).toLowerCase() : "";
+        const cumpleTexto = nombreTexto.includes(textoBusqueda) || 
+                            (r.Telefono && String(r.Telefono).includes(textoBusqueda));
+        
         // 🛡️ CORRECCIÓN DE EXTRACCIÓN: Tomamos los primeros 10 caracteres (AAAA-MM-DD) de forma segura
         const stringLlegada = r.Fecha_Llegada ? r.Fecha_Llegada.substring(0, 10) : "";
         const stringSalida = r.Fecha_Salida ? r.Fecha_Salida.substring(0, 10) : "";
