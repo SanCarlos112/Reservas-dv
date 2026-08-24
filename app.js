@@ -43,34 +43,75 @@ function obtenerVistaActual() {
     return vistaActiva;
 }
 
-function cambiarVista(vistaDestino) {
-    const vistas = ['dashboard', 'calendario', 'lista', 'formulario'];
-    
-    vistas.forEach(vista => {
-        const elemento = document.getElementById(`vista-${vista}`);
-        if (elemento) {
-            elemento.classList.add('hidden');
-            elemento.style.display = 'none'; // Refuerzo nativo para asegurar que se oculte
+/**
+ * Controla la navegación del sistema ocultando/mostrando secciones 
+ * e iluminando dinámicamente el botón del módulo activo.
+ * @param {string} vista - Nombre de la vista ('dashboard', 'calendario', 'lista', 'formulario')
+ */
+function cambiarVista(vista) {
+    console.log("🔄 [Navegación] Cambiando a la vista:", vista);
+
+    // ==========================================
+    // 1. CONTROL DE SECCIONES (MOSTRAR / OCULTAR)
+    // ==========================================
+    // Definimos la lista de IDs de las secciones principales en tu HTML
+    const secciones = ['dashboard', 'calendario', 'lista', 'formulario'];
+
+    secciones.forEach(idSeccion => {
+        const elementoSeccion = document.getElementById(idSeccion);
+        if (elementoSeccion) {
+            if (idSeccion === vista) {
+                // Mostramos la sección activa quitando la clase hidden (o forzando block)
+                elementoSeccion.classList.remove('hidden');
+                elementoSeccion.style.display = 'block';
+            } else {
+                // Ocultamos las secciones inactivas
+                elementoSeccion.classList.add('hidden');
+                elementoSeccion.style.display = 'none';
+            }
         }
     });
 
-    const elementoDestino = document.getElementById(`vista-${vistaDestino}`);
-    if (elementoDestino) {
-        elementoDestino.classList.remove('hidden');
+    // ==========================================
+    // 2. ILUMINACIÓN DINÁMICA DEL MENÚ DE MÓDULOS
+    // ==========================================
+    // Mapeo exacto entre el nombre de la vista y el ID de sus botones en index.html
+    const botonesMenu = {
+        'dashboard': 'btn-dashboard',
+        'calendario': 'btn-calendario',
+        'lista': 'btn-lista',
+        'formulario': 'btn-nuevo'
+    };
+
+    // Recorremos todos los botones para dejarlos en estado "Apagado" (Gris / Normal)
+    Object.keys(botonesMenu).forEach(claveVista => {
+        const idBoton = botonesMenu[claveVista];
+        const boton = document.getElementById(idBoton);
         
-        // Forzamos el despliegue nativo según el tipo de sección
-        if (vistaDestino === 'dashboard') {
-            elementoDestino.style.display = 'flex'; 
-            actualizarDashboard();
-        } else if (vistaDestino === 'formulario') {
-            elementoDestino.style.display = 'block'; // 🔥 Fuerza al formulario a mostrarse
-        } else {
-            elementoDestino.style.display = 'grid';
-            if (vistaDestino === 'calendario') renderizarCalendario();
-            if (vistaDestino === 'lista') filtrarYRenderizarReservas(todasLasReservas);
+        if (boton) {
+            boton.classList.remove('active');
+            // Estilos limpios para el botón inactivo
+            boton.style.backgroundColor = "transparent";
+            boton.style.color = "#6b7280";          // Texto Gris
+            boton.style.fontWeight = "500";         // Grosor de letra normal
+            boton.style.borderBottom = "none";      // Sin línea inferior
         }
+    });
+
+    // Encendemos únicamente el botón del módulo seleccionado por el usuario
+    const idActivo = botonesMenu[vista];
+    const botonActivo = document.getElementById(idActivo);
+    
+    if (botonActivo) {
+        botonActivo.classList.add('active');
+        // Estilos destacados para el botón activo
+        botonActivo.style.backgroundColor = "#eff6ff"; // Fondo azul muy claro
+        botonActivo.style.color = "#1d4ed8";          // Texto Azul fuerte
+        botonActivo.style.fontWeight = "700";         // Letra en Negrita
+        botonActivo.style.borderBottom = "3px solid #1d4ed8"; // Línea inferior azul indicadora
     }
 }
+
 
 async function obtenerReservas() {
     const contenedorCards = document.getElementById("contenedor-cards");
