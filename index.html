@@ -6,133 +6,87 @@
     <title>Control de Reservaciones - DV</title>
     <style>
         /* 🎨 DISEÑO LOCAL GARANTIZADO (SIN DEPENDER DE INTERNET) */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 0; display: flex; flex-direction: column; min-h: 100vh; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; transition: background-color 0.3s, color 0.3s; }
         header { background-color: #2563eb; color: white; padding: 12px 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
-        .badge { font-size: 12px; background-color: #1d4ed8; padding: 4px 8px; rounded-radius: 9999px; border: 1px solid #60a5fa; border-radius: 9999px; }
+        .badge { font-size: 12px; background-color: #1d4ed8; padding: 4px 8px; border-radius: 9999px; border: 1px solid #60a5fa; }
         nav { background-color: white; border-bottom: 1px solid #e5e7eb; display: flex; position: sticky; top: 48px; z-index: 40; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        nav button { flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; cursor: pointer; }
+        nav button { flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.2s; }
         nav button.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: bold; }
         main { flex: 1; max-width: 500px; width: 100%; margin: 0 auto; padding: 16px; box-sizing: border-box; }
         section { display: flex; flex-direction: column; gap: 16px; }
         .hidden { display: none !important; }
         .banner { background: linear-gradient(to right, #3b82f6, #4f46e5); color: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .grid-stats { display: grid; grid-template-cols: 1fr 1fr; gap: 12px; }
+        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .card-stat { background-color: white; padding: 16px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .stat-label { color: #9ca3af; font-size: 11px; font-weight: 600; text-transform: uppercase; display: block; }
         .stat-val { font-size: 24px; font-weight: bold; display: block; margin-top: 8px; }
         .text-green { color: #10b981; }
-        .input-text { w-width: 100%; width: 100%; background-color: white; padding: 12px; border-radius: 12px; border: 1px solid #d1d5db; box-sizing: border-box; font-size: 14px; }
+        .input-text { width: 100%; background-color: white; padding: 12px; border-radius: 12px; border: 1px solid #d1d5db; box-sizing: border-box; font-size: 14px; }
         form { background-color: white; padding: 20px; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 12px; }
-        .grid-form { display: grid; grid-template-cols: 1fr 1fr; gap: 12px; border-top: 1px solid #f3f4f6; padding-top: 12px; }
+        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid #f3f4f6; padding-top: 12px; }
         label { font-size: 12px; font-weight: 500; color: #4b5563; display: block; margin-bottom: 4px; }
         .btn-submit { background-color: #2563eb; color: white; border: none; font-weight: bold; padding: 14px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
         .btn-submit:hover { background-color: #1d4ed8; }
         .card-reserva { background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 12px; }
         .card-header { display: flex; justify-content: space-between; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
         .folio { font-family: monospace; font-weight: bold; background-color: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #4b5563; }
-        .grid-dates { display: grid; grid-template-cols: 1fr 1fr; gap: 8px; }
+        .grid-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .date-box { background-color: #f9fafb; padding: 8px; border-radius: 8px; font-size: 12px; }
         .date-label { color: #9ca3af; display: block; }
         .date-val { font-weight: 600; color: #374151; }
-        .grid-days { display: grid; grid-template-cols: repeat(7, 1fr); gap: 6px; background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; text-align: center; font-size: 12px; }
+        .grid-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; text-align: center; font-size: 12px; }
         .day-name { font-weight: bold; color: #9ca3af; padding-bottom: 6px; }
         .day-box { padding: 8px 0; border: 1px solid #e5e7eb; border-radius: 8px; }
         .day-busy { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; font-weight: bold; }
         .day-free { background-color: #ecfdf5; color: #059669; border-color: #a7f3d0; }
 
-/* 🎨 PALETA DE COLORES DINÁMICOS PARA HÚESPEDES */
-.user-color-0 { background-color: #e0f2fe !important; color: #0369a1 !important; font-weight: bold !important; } /* Azul */
-.user-color-1 { background-color: #dcfce7 !important; color: #15803d !important; font-weight: bold !important; } /* Verde */
-.user-color-2 { background-color: #f3e8ff !important; color: #6b21a8 !important; font-weight: bold !important; } /* Morado */
-.user-color-3 { background-color: #ffedd5 !important; color: #c2410c !important; font-weight: bold !important; } /* Naranja */
-.user-color-4 { background-color: #fce7f3 !important; color: #be185d !important; font-weight: bold !important; } /* Rosa */
+        /* 🎨 PALETA DE COLORES DINÁMICOS PARA HÚESPEDES */
+        .user-color-0 { background-color: #e0f2fe !important; color: #0369a1 !important; font-weight: bold !important; }
+        .user-color-1 { background-color: #dcfce7 !important; color: #15803d !important; font-weight: bold !important; }
+        .user-color-2 { background-color: #f3e8ff !important; color: #6b21a8 !important; font-weight: bold !important; }
+        .user-color-3 { background-color: #ffedd5 !important; color: #c2410c !important; font-weight: bold !important; }
+        .user-color-4 { background-color: #fce7f3 !important; color: #be185d !important; font-weight: bold !important; }
 
-/* Estilo base para celdas ocupadas */
-#calendario-contenedor .celda-ocupada {
-    cursor: pointer !important;
-    border: 1px solid #d1d5db !important;
-}
-
+        /* Estilo base para celdas ocupadas */
+        #calendario-contenedor .celda-ocupada { cursor: pointer !important; border: 1px solid #d1d5db !important; }
         
-/* 📊 ARREGLO RESPONSIVO: DASHBOARD (ADAPTABLE) */
-#vista-dashboard .grid {
-    display: flex !important;
-    flex-direction: column !important; /* Por defecto en vertical para celular 📱 */
-    gap: 16px !important;
-}
+        /* 📊 ARREGLO RESPONSIVO: DASHBOARD */
+        #vista-dashboard .grid { display: flex !important; flex-direction: column !important; gap: 16px !important; }
+        @media (min-width: 768px) { #vista-dashboard .grid { flex-direction: row !important; justify-content: space-between; } }
+        #vista-dashboard .bg-white { flex: 1 !important; padding: 24px !important; border-radius: 16px !important; border: 1px solid #f3f4f6 !important; background-color: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important; }
 
-/* 💻 Si la pantalla es grande (Computadora), se acomoda en horizontal automáticamente */
-@media (min-width: 768px) {
-    #vista-dashboard .grid {
-        flex-direction: row !important;
-        justify-content: space-between;
-    }
-}
+        /* 📅 ARREGLO NATIVO: CALENDARIO */
+        #vista-calendario .grid-cols-7 { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 8px !important; text-align: center !important; }
+        #calendario-contenedor div { padding: 12px !important; border: 1px solid #e5e7eb !important; border-radius: 8px !important; min-height: 45px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
 
-#vista-dashboard .bg-white {
-    flex: 1 !important;
-    padding: 24px !important;
-    border-radius: 16px !important;
-    border: 1px solid #f3f4f6 !important;
-    background-color: #ffffff !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
-}
+        /* 🗂️ ARREGLO NATIVO: CONTENEDOR DE TARJETAS */
+        #contenedor-cards { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; gap: 16px !important; }
+        #contenedor-cards div { background-color: #ffffff !important; padding: 20px !important; border-radius: 16px !important; border: 1px solid #f3f4f6 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important; }
 
-/* 📅 ARREGLO NATIVO: CALENDARIO Y DÍAS DE LA SEMANA */
-#vista-calendario .grid-cols-7 {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr) !important;
-    gap: 8px !important;
-    text-align: center !important;
-}
-#calendario-contenedor div {
-    padding: 12px !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 8px !important;
-    min-height: 45px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
+        /* 📝 ARREGLO NATIVO: FORMULARIO */
+        #vista-formulario { background-color: #ffffff !important; padding: 24px !important; border-radius: 16px !important; border: 1px solid #f3f4f6 !important; max-width: 600px; margin: 0 auto; }
+        #vista-formulario input, #vista-formulario textarea { width: 100%; padding: 8px 12px; margin-top: 4px; margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
 
-/* 🗂️ ARREGLO NATIVO: CONTENEDOR DE TARJETAS (RESERVAS) */
-#contenedor-cards {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
-    gap: 16px !important;
-}
-#contenedor-cards div {
-    background-color: #ffffff !important;
-    padding: 20px !important;
-    border-radius: 16px !important;
-    border: 1px solid #f3f4f6 !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
-}
+        /* 🔥 REGLA DE ORO: Forzar encendido y apagado de vistas */
+        .hidden { display: none !important; }
 
-/* 📝 ARREGLO NATIVO: FORMULARIO AGENDAR */
-#vista-formulario {
-    background-color: #ffffff !important;
-    padding: 24px !important;
-    border-radius: 16px !important;
-    border: 1px solid #f3f4f6 !important;
-    max-width: 600px;
-    margin: 0 auto;
-}
-#vista-formulario input, #vista-formulario textarea {
-    width: 100%;
-    padding: 8px 12px;
-    margin-top: 4px;
-    margin-bottom: 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    box-sizing: border-box;
-}
-
-/* 🔥 REGLA DE ORO: Forzar encendido y apagado de vistas sin depender de Tailwind */
-.hidden {
-    display: none !important;
-}
+        /* 🌙 TEMA OSCURO (Dark Mode) */
+        body.dark-mode { background-color: #111827 !important; color: #e5e7eb !important; }
+        body.dark-mode header { background-color: #1f2937 !important; color: #f3f4f6 !important; border-bottom: 1px solid #374151; }
+        body.dark-mode nav { background-color: #1f2937 !important; border-bottom: 1px solid #374151; }
+        body.dark-mode nav button { color: #9ca3af !important; }
+        body.dark-mode nav button.active { color: #60a5fa !important; border-bottom-color: #60a5fa !important; }
+        body.dark-mode .bg-white, body.dark-mode form, body.dark-mode .card-stat, body.dark-mode .card-reserva, body.dark-mode .grid-stats, #calendario-contenedor div, body.dark-mode .banner { background-color: #1f2937 !important; color: #e5e7eb !important; border-color: #374151 !important; box-shadow: 0 1px 2px rgba(0,0,0,0.5) !important; }
+        body.dark-mode input, body.dark-mode textarea { background-color: #374151 !important; color: #f3f4f6 !important; border-color: #4b5563 !important; }
+        body.dark-mode input::placeholder, body.dark-mode textarea::placeholder { color: #9ca3af !important; }
+        body.dark-mode .day-name { color: #9ca3af !important; }
+        body.dark-mode .day-free { background-color: #374151 !important; color: #e5e7eb !important; border-color: #4b5563 !important; }
+        body.dark-mode .text-green { color: #34d399 !important; }
+        body.dark-mode .text-amber { color: #fbbf24 !important; }
+        body.dark-mode .text-red { color: #f87171 !important; }
         
+        #theme-toggle { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 4px 8px; border-radius: 50%; transition: transform 0.2s; }
+        #theme-toggle:hover { transform: scale(1.1); background-color: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body>
@@ -140,188 +94,169 @@
     <!-- 📱 BARRA SUPERIOR -->
     <header>
         <div>🏠 Portal DV</div>
-        <div class="badge">Equipo</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="badge">Equipo</div>
+            <!-- 🆕 BOTÓN DE TEMA -->
+            <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar Tema">🌙</button>
+        </div>
     </header>
 
     <!-- 🗺️ MENÚ DE MÓDULOS -->
-    <nav style="background-color: white; border-bottom: 1px solid #e5e7eb; display: flex; position: sticky; top: 0; z-index: 40;">
+    <nav>
         <button onclick="cambiarVista('dashboard')" id="btn-dashboard" style="flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #2563eb; cursor: pointer;">Inicio</button>
         <button onclick="cambiarVista('calendario')" id="btn-calendario" style="flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer;">Calendario</button>
         <button onclick="cambiarVista('lista')" id="btn-lista" style="flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer;">Reservas</button>
         <button onclick="cambiarVista('formulario')" id="btn-nuevo" style="flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer;">Agendar</button>
     </nav>
 
-<!-- CONTENEDOR PRINCIPAL -->
-<main class="max-w-6xl mx-auto p-4 flex-1">
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main>
 
-    <!-- 1️⃣ VISTA: DASHBOARD / INICIO -->
-    <div id="vista-dashboard" class="hidden space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-400">Total Reservaciones</p>
-                    <h3 id="dash-total-reservas" class="text-2xl font-bold text-gray-800 mt-1">0</h3>
+        <!-- 1️⃣ VISTA: DASHBOARD -->
+        <div id="vista-dashboard" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-400">Total Reservaciones</p>
+                        <h3 id="dash-total-reservas" class="text-2xl font-bold text-gray-800 mt-1">0</h3>
+                    </div>
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-xl text-xl">📊</div>
                 </div>
-                <div class="p-3 bg-blue-50 text-blue-600 rounded-xl text-xl">📊</div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-400">Ingresos Totales</p>
-                    <h3 id="dash-ingresos-totales" class="text-2xl font-bold text-emerald-600 mt-1">$0.00</h3>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-400">Ingresos Totales</p>
+                        <h3 id="dash-ingresos-totales" class="text-2xl font-bold text-emerald-600 mt-1">$0.00</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-xl">💵</div>
                 </div>
-                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-xl">💵</div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-400">Saldos Pendientes</p>
-                    <h3 id="dash-saldos-pendientes" class="text-2xl font-bold text-amber-600 mt-1">$0.00</h3>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-400">Saldos Pendientes</p>
+                        <h3 id="dash-saldos-pendientes" class="text-2xl font-bold text-amber-600 mt-1">$0.00</h3>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-xl text-xl">⏳</div>
                 </div>
-                <div class="p-3 bg-amber-50 text-amber-600 rounded-xl text-xl">⏳</div>
             </div>
         </div>
-    </div>
 
-    <!-- 2️⃣ VISTA: CALENDARIO -->
-    <div id="vista-calendario" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                🗓️ <span id="calendario-mes-año">Cargando mes...</span>
+        <!-- 2️⃣ VISTA: CALENDARIO -->
+        <div id="vista-calendario" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    🗓️ <span id="calendario-mes-año">Cargando mes...</span>
+                </h2>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cambiarMes(-1)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">◀ Ant</button>
+                    <button type="button" onclick="cambiarMes(1)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">Sig ▶</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+            </div>
+            <div id="calendario-contenedor" class="grid grid-cols-7 gap-2 text-sm"></div>
+        </div>
+
+        <!-- 3️⃣ VISTA: LISTA DE RESERVAS -->
+        <div id="vista-lista" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+                <input type="text" id="buscador-reservas" oninput="filtrarYRenderizarReservas()" placeholder="🔍 Buscar por huésped o teléfono..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                <div class="border-t border-gray-100 pt-3">
+                    <p class="text-xs font-bold text-gray-400 uppercase mb-2">📋 Auditoría / Filtro por Periodo</p>
+                    <div id="fila-auditoria-fechas" style="display: flex !important; gap: 8px !important; align-items: flex-end !important;">
+                        <div style="flex: 1 !important;">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase" style="margin-bottom: 2px;">Desde:</label>
+                            <input type="date" id="auditoria-desde" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" style="margin: 0 !important;">
+                        </div>
+                        <div style="flex: 1 !important;">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase" style="margin-bottom: 2px;">Hasta:</label>
+                            <input type="date" id="auditoria-hasta" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" style="margin: 0 !important;">
+                        </div>
+                    </div>
+                    <button type="button" onclick="limpiarFiltroAuditoria()" class="w-full mt-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-lg text-xs transition-colors">Mostrar solo próximas (Limpiar Auditoría)</button>
+                </div>
+            </div>
+            <div id="contenedor-cards" class="space-y-4"></div>
+        </div>
+
+        <!-- 4️⃣ VISTA: AGENDAR / FORMULARIO -->
+        <div id="vista-formulario" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-2xl mx-auto">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center justify-between gap-2">
+                <span id="titulo-formulario">📝 Nueva Reservación</span>
+                <button type="button" id="btn-cancelar-edicion" onclick="cancelarEdicion()" class="hidden text-xs bg-gray-100 hover:bg-gray-200 text-gray-500 px-3 py-1.5 rounded-lg font-bold">Volver a Lista</button>
             </h2>
-            <div class="flex gap-2">
-                <button type="button" onclick="mesVisualizado.setMonth(mesVisualizado.getMonth() - 1); renderizarCalendario();" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">◀ Ant</button>
-                <button type="button" onclick="mesVisualizado.setMonth(mesVisualizado.getMonth() + 1); renderizarCalendario();" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">Sig ▶</button>
-            </div>
-        </div>
-        <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">
-            <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
-        </div>
-        <div id="calendario-contenedor" class="grid grid-cols-7 gap-2 text-sm"></div>
-    </div>
-
-    <!-- 3️⃣ VISTA: LISTA DE RESERVAS -->
-    <div id="vista-lista" class="hidden space-y-4">
-        <!-- Panel de Control: Buscador y Auditoría -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
-            <!-- Buscador por Texto -->
-            <input type="text" id="buscador-reservas" oninput="filtrarYRenderizarReservas()" placeholder="🔍 Buscar por huésped o teléfono..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-            
-            <!-- Campos de Auditoría por Periodo -->
-            <!-- Campos de Auditoría por Periodo -->
-            <div class="border-t border-gray-100 pt-3">
-                <p class="text-xs font-bold text-gray-400 uppercase mb-2">📋 Auditoría / Filtro por Periodo</p>
-                
-                <!-- 🆕 CONTENEDOR EN UNA SOLA FILA HORIZONTAL -->
-                <div id="fila-auditoria-fechas" style="display: flex !important; gap: 8px !important; align-items: flex-end !important;">
-                    <div style="flex: 1 !important;">
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase" style="margin-bottom: 2px;">Desde:</label>
-                        <input type="date" id="auditoria-desde" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" style="margin: 0 !important;">
+            <form id="form-reserva" onsubmit="guardarReserva(event)" class="space-y-4">
+                <input type="hidden" id="form-reserva-id" value="">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Completo *</label>
+                        <input type="text" id="Nombre_Completo" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
-                    <div style="flex: 1 !important;">
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase" style="margin-bottom: 2px;">Hasta:</label>
-                        <input type="date" id="auditoria-hasta" onchange="filtrarYRenderizarReservas()" class="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs" style="margin: 0 !important;">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Teléfono móvil</label>
+                        <input type="tel" id="Telefono" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Llegada *</label>
+                        <input type="date" id="Fecha_Llegada" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Salida *</label>
+                        <input type="date" id="Fecha_Salida" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total Reserva ($)</label>
+                        <input type="number" id="Total_Reserva" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Anticipo ($)</label>
+                        <input type="number" id="Anticipo" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Anticipo</label>
+                        <input type="date" id="Fecha_Anticipo" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Liquidación / Pago ($)</label>
+                        <input type="number" id="Pago" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Pago Liq.</label>
+                        <input type="date" id="Fecha_Pago" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Limpieza ($)</label>
+                        <input type="number" id="Pago_Limpieza" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Limpieza</label>
+                        <input type="date" id="Fecha_Limpieza" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Brazaletes ($)</label>
+                        <input type="number" id="Pago_Brazaletes" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Comisión Pagada ($)</label>
+                        <input type="number" id="Comision_Pagada" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Comisión</label>
+                        <input type="date" id="Fecha_Comision" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
                 </div>
-                <!-- Botón opcional para limpiar el filtro de auditoría -->                
-                <button type="button" onclick="limpiarFiltroAuditoria()" class="w-full mt-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-lg text-xs transition-colors">Mostrar solo próximas (Limpiar Auditoría)</button>
-            </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observaciones</label>
+                    <textarea id="Observaciones" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"></textarea>
+                </div>
+                <div class="flex justify-between items-center pt-2">
+                    <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all">Guardar Reservación</button>
+                    <button type="button" id="btn-cancelar-reserva" class="hidden ml-4 py-3 px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all">❌ Cancelar Reservación</button>
+                </div>
+            </form>
         </div>
 
-        <!-- Contenedor de Tarjetas Únicas -->
-        <div id="contenedor-cards" class="space-y-4">
-            <!-- JavaScript inyectará las tarjetas aquí -->
-        </div>
-    </div>
+    </main>
 
-    <!-- 4️⃣ VISTA: AGENDAR / FORMULARIO (INICIO) -->
-    <div id="vista-formulario" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-2xl mx-auto">
-        <!-- 🆕 Cambiamos el título estático por uno dinámico -->
-        <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center justify-between gap-2">
-            <span id="titulo-formulario">📝 Nueva Reservación</span>
-            <!-- Botón discreto para salir si estamos editando -->
-            <button type="button" id="btn-cancelar-edicion" onclick="cancelarEdicion()" class="hidden text-xs bg-gray-100 hover:bg-gray-200 text-gray-500 px-3 py-1.5 rounded-lg font-bold">Volver a Lista</button>
-        </h2>
-
-        <form id="form-reserva" onsubmit="guardarReserva(event)" class="space-y-4">
-            <!-- 🆕 CAMPO OCULTO: Guarda el Folio/ID de la reserva cuando se está editando -->
-            <input type="hidden" id="form-reserva-id" value="">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Completo *</label>
-                    <input type="text" id="Nombre_Completo" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Teléfono móvil</label>
-                    <input type="tel" id="Telefono" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Llegada *</label>
-                    <input type="date" id="Fecha_Llegada" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Salida *</label>
-                    <input type="date" id="Fecha_Salida" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total Reserva ($)</label>
-                    <input type="number" id="Total_Reserva" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Anticipo ($)</label>
-                    <input type="number" id="Anticipo" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Anticipo</label>
-                    <input type="date" id="Fecha_Anticipo" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Liquidación / Pago ($)</label>
-                    <input type="number" id="Pago" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Pago Liq.</label>
-                    <input type="date" id="Fecha_Pago" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Limpieza ($)</label>
-                    <input type="number" id="Pago_Limpieza" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Limpieza</label>
-                    <input type="date" id="Fecha_Limpieza" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Brazaletes ($)</label>
-                    <input type="number" id="Pago_Brazaletes" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Comisión Pagada ($)</label>
-                    <input type="number" id="Comision_Pagada" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Comisión</label>
-                    <input type="date" id="Fecha_Comision" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observaciones</label>
-                <textarea id="Observaciones" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"></textarea>
-            </div>
-            <div class="class=pt-2 flex justify-between items-center">
-                  <!-- Tu botón original de guardar cambios (ocupa el espacio principal) -->
-                  <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all">
-                      Guardar Reservación
-                  </button>
-                  <!-- Tu nuevo botón rojo de Cancelar (oculto por defecto con la clase 'hidden') -->
-                  <button type="button" id="btn-cancelar-reserva" class="hidden ml-4 py-3 px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all">
-                      ❌ Cancelar Reservación
-                  </button>
-              </div>
-        </form>
-    </div>
-
-</main>
-    
     <!-- Conector con el archivo de inteligencia -->
     <script src="app.js"></script>
 </body>
