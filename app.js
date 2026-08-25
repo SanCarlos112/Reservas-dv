@@ -453,6 +453,7 @@ function verificarConflictoFechas(llegadaNueva, salidaNueva) {
 }
 
 //  FUNCIÓN renderizarCalendario...
+// 🆕 FUNCIÓN OPTIMIZADA: Renderizado Rápido con Mapa de Ocupación
 function renderizarCalendario() {
     const contenedor = document.getElementById("calendario-contenedor");
     const titulo = document.getElementById("calendario-mes-año");
@@ -461,6 +462,7 @@ function renderizarCalendario() {
     try {
         contenedor.innerHTML = "";
 
+        // Inicializar mes visualizado si no existe
         if (typeof mesVisualizado === "undefined" || !(mesVisualizado instanceof Date)) {
             mesVisualizado = new Date();
         }
@@ -473,13 +475,52 @@ function renderizarCalendario() {
             "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
         ];
         
-        if (titulo) {
-            titulo.innerText = `${meses[mes]} ${año}`;
+        if (titulo) titulo.innerText = `${meses[mes]} ${año}`;
+
+        // 1. 🚀 CREAR MAPA DE OCUPACIÓN (Hash Map)
+        // En lugar de buscar en el array 31 veces, creamos un diccionario de fechas ocupadas.
+        // Esto reduce la complejidad de O(N*31) a O(N + 31).
+        const mapaOcupacion = {};
+        
+        if (todasLasReservas && todasLasReservas.length > 0) {
+            todasLasReservas.forEach((r, indice) => {
+                // Ignorar canceladas
+                if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return;
+                if (!r.Fecha_Llegada || !r.Fecha_Salida) return;
+
+                // Extraer fechas limpias (YYYY-MM-DD)
+                const inicioStr = String(r.Fecha_Llegada).substring(0, 10);
+                const finStr = String(r.Fecha_Salida).substring(0, 10);
+                
+                const inicioFecha = new Date(inicioStr + "T00:00:00");
+                const finFecha = new Date(finStr + "T00:00:00");
+
+                // Solo procesar si la reserva toca el mes que estamos dibujando
+                // Verificamos si el rango de la reserva se superpone con el mes actual
+                const mesInicio = new Date(año, mes, 1);
+                const mesFin = new Date(año, mes + 1, 0);
+
+                if (inicioFecha <= mesFin && finFecha > mesInicio) {
+                    // Iterar día por día dentro del rango de la reserva
+                    let diaActual = new Date(inicioFecha);
+                    while (diaActual < finFecha) {
+                        // Solo marcar si el día está dentro del mes visualizado
+                        if (diaActual.getFullYear() === año && diaActual.getMonth() === mes) {
+                            const fechaKey = diaActual.toISOString().split('T')[0]; // "YYYY-MM-DD"
+                            // Guardamos la reserva y su índice para el color
+                            mapaOcupacion[fechaKey] = { reserva: r, indice: indice };
+                        }
+                        diaActual.setDate(diaActual.getDate() + 1);
+                    }
+                }
+            });
         }
 
+        // 2. 🎨 DIBUJAR EL CALENDARIO (Usando el mapa para búsqueda instantánea)
         const primerDiaSemana = new Date(año, mes, 1).getDay();
         const diasEnMes = new Date(año, mes + 1, 0).getDate();
 
+        // Celdas vacías antes del primer día del mes
         const celdasVacias = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
         for (let i = 0; i < celdasVacias; i++) {
             const divVacio = document.createElement("div");
@@ -488,40 +529,36 @@ function renderizarCalendario() {
             contenedor.appendChild(divVacio);
         }
 
+        // Días del mes
         for (let i = 1; i <= diasEnMes; i++) {
-            const diaDiv = document.createElement("div");
-            diaDiv.innerText = i;
-
             const mesStr = String(mes + 1).padStart(2, '0');
             const diaStr = String(i).padStart(2, '0');
             const fechaCeldaStr = `${año}-${mesStr}-${diaStr}`;
 
-            const resultadoBusqueda = (typeof obtenerReservaConIndice === "function") 
-                ? obtenerReservaConIndice(fechaCeldaStr) 
-                : null;
+            const diaDiv = document.createElement("div");
+            diaDiv.innerText = i;
 
-            if (resultadoBusqueda) {
-                const { reserva, indice } = resultadoBusqueda;
+            // ✅ BÚSQUEDA INSTANTÁNEA (O(1))
+            const datoOcupado = mapaOcupacion[fechaCeldaStr];
+
+            if (datoOcupado) {
+                // Día ocupado
+                const { reserva, indice } = datoOcupado;
                 const numeroColor = indice % 5;
                 
                 diaDiv.className = `p-2 border text-center rounded celda-ocupada user-color-${numeroColor}`;
                 
+                // Evento Click para ver detalles
                 diaDiv.onclick = () => {
-                    // 🛡️ EXTRACCIÓN Y FORMATEO SEGURO A DD-MM-AAAA
-                    const formatearFecha = (fechaTxt) => {
-                        if (!fechaTxt) return "No definida";
-                        const limpio = String(fechaTxt).substring(0, 10); 
-                        const partes = limpio.split("-");                 
-                        if (partes.length !== 3) return fechaTxt;
-                        return `${partes[2]}-${partes[1]}-${partes[0]}`;   
+                    const formatearFecha = (f) => {
+                        if (!f) return "No definida";
+                        const p = String(f).substring(0, 10).split("-");
+                        return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : f;
                     };
-
-                    const fLlegadaEspañol = formatearFecha(reserva.Fecha_Llegada);
-                    const fSalidaEspañol = formatearFecha(reserva.Fecha_Salida);
-
-                    alert(`📌 DETALLES DE LA RESERVACIÓN\n--------------------------------------------\n👤 Huésped: ${reserva.Nombre_Completo || "Desconocido"}\n📱 Teléfono: ${reserva.Telefono || "No registrado"}\n📅 Llegada: ${fLlegadaEspañol}\n📅 Salida: ${fSalidaEspañol}\n💵 Total: $${reserva.Total_Reserva || 0} MN\n💰 Anticipo: $${reserva.Anticipo || 0} MN\n📝 Obs: ${reserva.Observaciones || "Ninguna"}`);
+                    alert(`📌 DETALLES DE LA RESERVACIÓN\n--------------------------------------------\n👤 Huésped: ${reserva.Nombre_Completo || "Desconocido"}\n📱 Teléfono: ${reserva.Telefono || "No registrado"}\n📅 Llegada: ${formatearFecha(reserva.Fecha_Llegada)}\n📅 Salida: ${formatearFecha(reserva.Fecha_Salida)}\n💵 Total: $${reserva.Total_Reserva || 0} MN\n💰 Anticipo: $${reserva.Anticipo || 0} MN\n📝 Obs: ${reserva.Observaciones || "Ninguna"}`);
                 };
             } else {
+                // Día libre
                 diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
                 
                 diaDiv.onclick = () => {
@@ -532,7 +569,6 @@ function renderizarCalendario() {
                     }
                 };
             }
-
             contenedor.appendChild(diaDiv);
         }
     } catch (error) {
@@ -540,7 +576,6 @@ function renderizarCalendario() {
         contenedor.innerHTML = `<p style="color:#dc2626; padding:20px; text-align:center;">⚠️ Error interno al dibujar el calendario: ${error.message}</p>`;
     }
 }
-
 
 
 // 🔑 RECUERDA AGREGAR ESTA FUNCIÓN AUXILIAR 
