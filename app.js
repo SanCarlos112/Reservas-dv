@@ -855,24 +855,22 @@ function cancelarEdicion() {
  * Envía la orden de cancelación al servidor de Google Sheets
  * @param {string|number} idReservacion - El Folio o número de la reservación
  */
+// 🆕 FUNCIÓN CORREGIDA: ejecutarCancelacion
 async function ejecutarCancelacion(idReservacion) {
     console.log("❌ [Cancelación] Solicitando cancelar folio:", idReservacion);
     
-    // Cambiamos el texto del botón rojo para dar feedback visual
     const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
     if (btnCancelarReserva) {
         btnCancelarReserva.innerText = "⏳ Cancelando...";
         btnCancelarReserva.disabled = true;
     }
 
-    // Estructuramos los datos que va a recibir tu archivo Código.gs
     const datos = {
         action: "cancelar",
         id: idReservacion
     };
 
     try {
-        // Hacemos el envío de datos a tu URL de Google Apps Script
         const r = await fetch(WEB_APP_URL, { 
             method: "POST", 
             body: JSON.stringify(datos) 
@@ -882,15 +880,20 @@ async function ejecutarCancelacion(idReservacion) {
         if (res.status === "success") {
             alert("⚠️ Reservación cancelada y espacio liberado con éxito.");
             
-            // Limpiamos el formulario por seguridad
+            // 1. Limpiar formulario
             document.getElementById("form-reserva").reset();
             document.getElementById("form-reserva-id").value = "";
             document.getElementById("titulo-formulario").innerText = "📋 Nueva Reservación";
             if (btnCancelarReserva) btnCancelarReserva.classList.add("hidden");
 
-            // Recargamos los datos frescos desde el Excel y regresamos a la lista
-            await obtenerReservas();
+            // 2. 🆕 FORZAR RECARGA DE DATOS INMEDIATA
+            // Esto actualiza memoriaMeses y todasLasReservas para que el conflicto desaparezca
+            console.log("🔄 Recargando datos para liberar fecha...");
+            await obtenerReservas(); // Esperamos a que termine de cargar
+
+            // 3. Solo después de recargar, cambiamos de vista
             cambiarVista('lista');
+            
         } else {
             alert("❌ Hubo un detalle al procesar la cancelación en el servidor.");
         }
@@ -898,10 +901,10 @@ async function ejecutarCancelacion(idReservacion) {
         console.error("Error en proceso de cancelación:", error);
         alert("❌ Error de red al intentar conectar con el servidor de cancelaciones.");
     } finally {
-        // Restauramos el estado del botón por si acaso
         if (btnCancelarReserva) {
             btnCancelarReserva.innerText = "❌ Cancelar Reservación";
             btnCancelarReserva.disabled = false;
         }
     }
 }
+
