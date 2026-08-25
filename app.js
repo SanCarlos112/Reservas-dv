@@ -550,9 +550,11 @@ function obtenerReservaPorFecha(fechaCalendarioStr) {
     const tiempoCelda = new Date(fechaCalendarioStr + "T00:00:00").getTime();
 
     return todasLasReservas.find(r => {
+        // 🚨 CANDADO NUEVO: Ignorar si está cancelada
+        if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return false;
+
         if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
         
-        // Limpiamos cualquier formato de hora (como 'T00:00:00.000Z') partiendo el string por la letra T
         const limpiaLlegada = r.Fecha_Llegada.split("T")[0];
         const limpiaSalida = r.Fecha_Salida.split("T")[0];
 
@@ -589,6 +591,9 @@ function obtenerReservaConIndice(fechaCalendarioStr) {
     const tiempoCelda = new Date(fechaCalendarioStr + "T00:00:00").getTime();
 
     const indice = todasLasReservas.findIndex(r => {
+        // 🚨 CANDADO NUEVO: Si la reserva está cancelada, se ignora y se libera el día en el calendario
+        if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return false;
+
         if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
         
         // Extracción limpia y segura de "AAAA-MM-DD"
@@ -609,6 +614,7 @@ function obtenerReservaConIndice(fechaCalendarioStr) {
     }
     return null;
 }
+
 
 // ✏️ Se ejecuta al pulsar el botón azul "Actualizar / Cancelar"
 function abrirModalModificar(identificador) {
