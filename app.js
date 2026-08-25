@@ -3,6 +3,11 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhQ1e0ma32EtEx3U5X
 
 let todasLasReservas = [];
 let mesVisualizado = new Date(); 
+// 🆕 NUEVAS VARIABLES PARA MEMORIA Y CARGA INTELIGENTE
+let todasLasReservas = [];
+let mesVisualizado = new Date();
+let memoriaMeses = {}; // Formato: "YYYY-MM" -> [Array de reservas]
+
 
 // 🔄 CONFIGURACIÓN AL CARGAR LA PÁGINA
 document.addEventListener("DOMContentLoaded", () => { 
@@ -47,19 +52,18 @@ function obtenerVistaActual() {
  * Controla la navegación del sistema ocultando/mostrando las vistas con los IDs correctos
  * e iluminando dinámicamente el botón del módulo activo.
  */
+
+// 🆕 FUNCIÓN COMPLETA: cambiarVista (Con carga automática de calendario)
 function cambiarVista(vista) {
     console.log("🔄 [Navegación] Cambiando a la vista:", vista);
 
-    // =========================================================
-    // 1. CONTROL DE CONTENEDORES (Usando los IDs reales de tu HTML)
-    // =========================================================
-    // Buscamos los contenedores soportando el prefijo "vista-" que usa tu proyecto
+    // 1. CONTROL DE CONTENEDORES (IDs reales)
     const divDashboard = document.getElementById('vista-dashboard') || document.getElementById('dashboard');
     const divCalendario = document.getElementById('vista-calendario') || document.getElementById('calendario');
     const divLista = document.getElementById('vista-lista') || document.getElementById('lista');
     const divFormulario = document.getElementById('vista-formulario') || document.getElementById('formulario');
 
-    // Mostramos u ocultamos alternando la clase 'hidden' de Tailwind CSS
+    // Ocultar/Mostrar contenedores
     if (divDashboard) {
         if (vista === 'dashboard') divDashboard.classList.remove('hidden');
         else divDashboard.classList.add('hidden');
@@ -80,10 +84,7 @@ function cambiarVista(vista) {
         else divFormulario.classList.add('hidden');
     }
 
-
-    // ==========================================
-    // 2. ILUMINACIÓN DINÁMICA DEL MENÚ DE MÓDULOS
-    // ==========================================
+    // 2. ILUMINACIÓN DEL MENÚ
     const botonesMenu = {
         'dashboard': 'btn-dashboard',
         'calendario': 'btn-calendario',
@@ -91,73 +92,154 @@ function cambiarVista(vista) {
         'formulario': 'btn-nuevo'
     };
 
-    // Recorremos todos los botones para dejarlos en estado "Apagado" (Gris / Normal)
+    // Resetear todos los botones
     Object.keys(botonesMenu).forEach(claveVista => {
         const idBoton = botonesMenu[claveVista];
         const boton = document.getElementById(idBoton);
         
         if (boton) {
             boton.classList.remove('active');
-            // Estilos limpios para el botón inactivo
             boton.style.backgroundColor = "transparent";
-            boton.style.color = "#6b7280";          // Texto Gris
-            boton.style.fontWeight = "500";         // Grosor de letra normal
-            boton.style.borderBottom = "none";      // Sin línea inferior
+            boton.style.color = "#6b7280";
+            boton.style.fontWeight = "500";
+            boton.style.borderBottom = "none";
         }
     });
 
-    // Encendemos únicamente el botón del módulo seleccionado por el usuario
+    // Activar botón seleccionado
     const idActivo = botonesMenu[vista];
     const botonActivo = document.getElementById(idActivo);
     
     if (botonActivo) {
         botonActivo.classList.add('active');
-        // Estilos destacados para el botón activo
-        botonActivo.style.backgroundColor = "#eff6ff"; // Fondo azul muy claro
-        botonActivo.style.color = "#1d4ed8";          // Texto Azul fuerte
-        botonActivo.style.fontWeight = "700";         // Letra en Negrita
-        botonActivo.style.borderBottom = "3px solid #1d4ed8"; // Línea inferior azul indicadora
+        botonActivo.style.backgroundColor = "#eff6ff";
+        botonActivo.style.color = "#1d4ed8";
+        botonActivo.style.fontWeight = "700";
+        botonActivo.style.borderBottom = "3px solid #1d4ed8";
+    }
+
+    // 3. 🆕 LÓGICA DE CARGA AUTOMÁTICA Y ACTUALIZACIÓN
+    // Esta parte asegura que al cambiar de vista, los datos estén listos
+    if (vista === 'calendario') {
+        const keyMes = `${mesVisualizado.getFullYear()}-${String(mesVisualizado.getMonth()+1).padStart(2,'0')}`;
+        if (!memoriaMeses[keyMes]) {
+            console.log("📅 [cambiarVista] Mes no cargado. Iniciando carga:", keyMes);
+            cargarReservasParaRango(mesVisualizado.getFullYear(), mesVisualizado.getMonth());
+        } else {
+            console.log("📅 [cambiarVista] Mes ya en memoria. Renderizando.");
+            renderizarCalendario();
+        }
+    } else if (vista === 'dashboard') {
+        actualizarDashboard();
+    } else if (vista === 'lista') {
+        filtrarYRenderizarReservas();
     }
 }
 
 
+// 🆕 CARGA INICIAL: Hoy + 3 meses
 async function obtenerReservas() {
     const contenedorCards = document.getElementById("contenedor-cards");
     
+    // Mensaje de carga si es la primera vez
     if (contenedorCards) {
-        // Nota: Solo pintamos el mensaje si el contenedor está totalmente vacío 
-        // para no parpadear la pantalla si el usuario ya está viendo datos.
-        if (!contenedorCards.innerHTML || todasLasReservas.length === 0) {
-            contenedorCards.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservaciones desde Google Sheets...</p>`;
+        if (!contenedorCards.innerHTML || Object.keys(memoriaMeses).length === 0) {
+            contenedorCards.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservas...</p>`;
         }
     }
 
     try {
-        // 🔥 ROMPE-CACHÉ: Agregamos un sello de tiempo único (milisegundos actuales) al final de la URL
-        // Esto obliga al navegador del celular a descargar datos en vivo SI REGLA DE EXCEPCIÓN.
-        const urlConTiempoReal = `${WEB_APP_URL}?_=${new Date().getTime()}`;
+        const hoy = new Date();
+        const tresMesesFuturos = new Date(hoy);
+        tresMesesFuturos.setMonth(hoy.getMonth() + 3);
+        
+        const inicio = hoy.toISOString().split('T')[0];
+        const fin = tresMesesFuturos.toISOString().split('T')[0];
+
+        // URL con parámetros de fecha
+        const urlConTiempoReal = `${WEB_APP_URL}?fechaInicio=${inicio}&fechaFin=${fin}&_=${new Date().getTime()}`;
         
         const respuesta = await fetch(urlConTiempoReal);
-        todasLasReservas = await respuesta.json();
+        const datos = await respuesta.json();
         
-        // 🔄 ACTUALIZACIÓN COMPONENTES EN PANTALLA
-        actualizarDashboard();
-        renderizarCalendario(); 
-        
-        if (typeof filtrarYRenderizarReservas === "function") {
+        if (Array.isArray(datos)) {
+            // 1. Limpiar memoria anterior
+            memoriaMeses = {};
+            
+            // 2. Distribuir datos por mes en la memoria
+            datos.forEach(r => {
+                if (r.Fecha_Llegada) {
+                    const fechaStr = String(r.Fecha_Llegada).substring(0, 10);
+                    const partes = fechaStr.split('-');
+                    if (partes.length === 3) {
+                        const keyMes = `${partes[0]}-${partes[1]}`;
+                        if (!memoriaMeses[keyMes]) memoriaMeses[keyMes] = [];
+                        memoriaMeses[keyMes].push(r);
+                    }
+                }
+            });
+
+            console.log(`✅ Carga inicial exitosa: ${datos.length} reservas cargadas.`);
+            contenedorCards.innerHTML = ""; // Limpiar mensaje de carga
+            
+            // 3. Actualizar UI
+            actualizarDashboard();
+            renderizarCalendario(); 
             filtrarYRenderizarReservas();
+        } else {
+            console.error("Formato de datos inválido");
         }
         
     } catch (e) { 
         console.error("Error al descargar reservas:", e); 
-        if (contenedorCards && todasLasReservas.length === 0) {
-            contenedorCards.innerHTML = `<p style="color:#dc2626; text-align:center; padding:20px; font-weight:500;">❌ Error al conectar con el servidor. Revisa tu conexión.</p>`;
+        if (contenedorCards) {
+            contenedorCards.innerHTML = `<p style="color:#dc2626; text-align:center; padding:20px; font-weight:500;">❌ Error de conexión. Revisa tu internet.</p>`;
         }
     }
 }
 
+// 🆕 CARGA BAJO DEMANDA: Para meses pasados o futuros que no están en memoria
+async function cargarReservasParaRango(anio, mes) {
+    const inicio = new Date(anio, mes, 1);
+    const fin = new Date(anio, mes + 1, 0);
+    
+    const fechaInicio = inicio.toISOString().split('T')[0];
+    const fechaFin = fin.toISOString().split('T')[0];
+    const keyMes = `${anio}-${String(mes+1).padStart(2,'0')}`;
+    
+    // Si ya está cargado, no hacemos nada
+    if (memoriaMeses[keyMes]) {
+        console.log(`📅 Mes ${keyMes} ya está en memoria.`);
+        return;
+    }
 
+    try {
+        console.log(`📡 Solicitando mes: ${keyMes} (${fechaInicio} a ${fechaFin})`);
+        const url = `${WEB_APP_URL}?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&_=${new Date().getTime()}`;
+        const respuesta = await fetch(url);
+        const datos = await respuesta.json();
+        
+        if (Array.isArray(datos)) {
+            memoriaMeses[keyMes] = datos;
+            console.log(`✅ Cargado mes ${keyMes}: ${datos.length} registros.`);
+            
+            // Si estamos en la vista calendario, renderizar inmediatamente
+            if (obtenerVistaActual() === 'calendario') {
+                renderizarCalendario();
+            }
+        }
+    } catch (e) {
+        console.error(`❌ Error cargando mes ${keyMes}:`, e);
+    }
+}
+
+
+// 🆕 ACTUALIZAR DASHBOARD: Calcula totales desde memoriaMeses
 function actualizarDashboard() {
+    // 1. Construir el array completo de reservas desde la memoria por meses
+    // Esto nos da todas las reservas que hemos cargado hasta el momento (Hoy + 3 meses, más las que el usuario haya navegado)
+    todasLasReservas = Object.values(memoriaMeses).flat();
+
     const totalReservasEl = document.getElementById("dash-total-reservas");
     const ingresosTotalesEl = document.getElementById("dash-ingresos-totales");
     const saldosPendientesEl = document.getElementById("dash-saldos-pendientes");
@@ -173,20 +255,21 @@ function actualizarDashboard() {
     let pendientes = 0;
 
     todasLasReservas.forEach(r => {
-        // 🚨 CANDADO NUEVO: Si la reserva está cancelada, no pintes sus fechas en el calendario
+        // Ignorar canceladas para los totales
         if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") {
-            return; // Salta a la siguiente reserva sin bloquear días
+            return;
         }
+
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
         
-        // 🛡️ CORRECCIÓN AQUÍ: Aseguramos leer el abono posterior correctamente
-        const pago = parseFloat(r.Pago) || parseFloat(r.Pago_Liquidacion) || 0;
+        // Lectura segura de liquidación
+        const pago = parseFloat(r.Pago_Liquidacion) || parseFloat(r.Pago) || 0;
 
-        // El dinero que YA entró a tu bolsa es el anticipo + los abonos posteriores
+        // Dinero recibido = Anticipo + Pagos posteriores
         ingresos += (anticipo + pago);
         
-        // El saldo que te deben es el total menos todo lo abonado
+        // Saldo pendiente = Total - (Anticipo + Pagos)
         pendientes += (total - anticipo - pago);
     });
 
@@ -195,65 +278,65 @@ function actualizarDashboard() {
     if (saldosPendientesEl) saldosPendientesEl.innerText = `$${pendientes.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
 }
 
-
 // 🔥 FUNCIÓN CENTRAL: Filtra, Ordena y Dibuja una Tarjeta Única por Reservación
+// 🆕 FILTRAR Y RENDERIZAR: Usa datos de memoriaMeses
 function filtrarYRenderizarReservas() {
     const contenedor = document.getElementById("contenedor-cards");
     if (!contenedor) return;
+
+    // 1. Asegurar que tenemos el array unificado (por si acaso se llama directo sin actualizarDashboard)
+    // Si ya se ejecutó actualizarDashboard, todasLasReservas ya está actualizado.
+    // Si no, lo construimos aquí:
+    if (!todasLasReservas || todasLasReservas.length === 0) {
+        todasLasReservas = Object.values(memoriaMeses).flat();
+    }
 
     const textoBusqueda = document.getElementById("buscador-reservas")?.value.toLowerCase() || "";
     const fDesde = document.getElementById("auditoria-desde")?.value || "";
     const fHasta = document.getElementById("auditoria-hasta")?.value || "";
 
-    // Capturamos el día de hoy a las 00:00:00 local para comparar vencimientos
     const hoyTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
 
-    // 1. Filtrar las reservas de la base de datos
+    // 2. Filtrar
     let reservasFiltradas = todasLasReservas.filter(r => {
-        // 🚨 CANDADO DE CANCELACIONES: Si el estado es "Cancelada", se ignora por completo
+        // Ignorar canceladas
         if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return false;
-    
         if (!r.Nombre_Completo) return false;
 
-    
-        // Filtro A: Buscador por Nombre o Teléfono
         const nombreTexto = r.Nombre_Completo ? String(r.Nombre_Completo).toLowerCase() : "";
         const cumpleTexto = nombreTexto.includes(textoBusqueda) || 
                             (r.Telefono && String(r.Telefono).includes(textoBusqueda));
         
-        // 🛡️ CORRECCIÓN DE EXTRACCIÓN: Tomamos los primeros 10 caracteres (AAAA-MM-DD) de forma segura
         const stringLlegada = r.Fecha_Llegada ? r.Fecha_Llegada.substring(0, 10) : "";
         const stringSalida = r.Fecha_Salida ? r.Fecha_Salida.substring(0, 10) : "";
 
         if (!stringLlegada || !stringSalida) return false;
 
-        // Convertimos a tiempo seguro de media noche local para la comparación
         const inicioReserva = new Date(stringLlegada + "T00:00:00").getTime();
         const finReserva = new Date(stringSalida + "T00:00:00").getTime();
 
-        // Filtro B: Si NO hay fechas de auditoría puestas, ocultamos las reservaciones pasadas
+        // Filtro: Si no hay auditoría, ocultar pasadas
         if (!fDesde && !fHasta) {
             return cumpleTexto && (finReserva >= hoyTimestamp);
         }
 
-        // Filtro C: Si la Auditoría por Periodo está activa, validamos el rango elegido
+        // Filtro: Si hay auditoría, mostrar dentro del rango
         const limiteDesde = fDesde ? new Date(fDesde + "T00:00:00").getTime() : 0;
         const limiteHasta = fHasta ? new Date(fHasta + "T00:00:00").getTime() : Infinity;
 
-        // La reserva se muestra si choca o cae dentro del periodo auditado
         const cumplePeriodo = (inicioReserva <= limiteHasta && finReserva >= limiteDesde);
 
         return cumpleTexto && cumplePeriodo;
     });
 
-    // 2. Ordenar de forma cronológica: Las reservas más próximas a realizarse van primero
+    // 3. Ordenar
     reservasFiltradas.sort((a, b) => {
         const tA = new Date((a.Fecha_Llegada || "").substring(0, 10) + "T00:00:00").getTime();
         const tB = new Date((b.Fecha_Llegada || "").substring(0, 10) + "T00:00:00").getTime();
         return tA - tB;
     });
 
-    // 3. Renderizar Tarjeta Única
+    // 4. Renderizar
     contenedor.innerHTML = "";
     if (reservasFiltradas.length === 0) {
         contenedor.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">📋 No se encontraron reservaciones para este criterio.</p>`;
@@ -263,34 +346,25 @@ function filtrarYRenderizarReservas() {
     reservasFiltradas.forEach(r => {
         const card = document.createElement("div");
         
-        // 🛡️ REFUERZO DE VARIABLES: Aseguramos leer correctamente el campo del Excel
-        console.log("💎 Analizando objeto reserva en tarjeta:", r);
-        
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
-        
-        // 🔄 BUSQUEDA SEGURA: Evaluamos cuál propiedad del JSON contiene el dinero de la liquidación
-         const valorPagoRaw = r.Pago_Liquidacion || r.Pago || 0;
-         const pago = parseFloat(valorPagoRaw) || 0;
-        
-        // Operación matemática real: Total menos todo lo abonado
+        const valorPagoRaw = r.Pago_Liquidacion || r.Pago || 0;
+        const pago = parseFloat(valorPagoRaw) || 0;
         const saldoPendiente = total - anticipo - pago;
 
         let etiquetaSaldo = "";
-        // Si el saldo pendiente es menor o igual a 0, la cuenta está saldada
         if (saldoPendiente > 0) {
             etiquetaSaldo = `<span style="background-color:#fff7ed; color:#c2410c; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space:nowrap;">⏳ Pendiente: $${saldoPendiente}</span>`;
         } else {
             etiquetaSaldo = `<span style="background-color:#ecfdf5; color:#15803d; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space:nowrap;">✅ Liquidado</span>`;
         }
 
-        // 🔄 CONVERSIÓN DE FORMATO TOTALMENTE CORREGIDA: Pasa de AAAA-MM-DD a DD-MM-AAAA
         const formatearA_Español = (fTxt) => {
             if (!fTxt) return "---";
-            const limpio = fTxt.substring(0, 10); // "AAAA-MM-DD"
-            const partes = limpio.split("-");     // ["AAAA", "MM", "DD"]
+            const limpio = fTxt.substring(0, 10);
+            const partes = limpio.split("-");
             if (partes.length !== 3) return fTxt;
-            return `${partes[2]}-${partes[1]}-${partes[0]}`; // "DD-MM-AAAA"
+            return `${partes[2]}-${partes[1]}-${partes[0]}`;
         };
 
         card.innerHTML = `
@@ -317,6 +391,8 @@ function filtrarYRenderizarReservas() {
         contenedor.appendChild(card);
     });
 }
+
+
 
 // Auxiliar para resetear los rangos de auditoría
 function limpiarFiltroAuditoria() {
@@ -454,6 +530,7 @@ function verificarConflictoFechas(llegadaNueva, salidaNueva) {
 
 //  FUNCIÓN renderizarCalendario...
 // 🆕 FUNCIÓN OPTIMIZADA: Renderizado Rápido con Mapa de Ocupación
+// 🆕 RENDERIZADO OPTIMIZADO: Usa memoriaMeses
 function renderizarCalendario() {
     const contenedor = document.getElementById("calendario-contenedor");
     const titulo = document.getElementById("calendario-mes-año");
@@ -461,66 +538,50 @@ function renderizarCalendario() {
 
     try {
         contenedor.innerHTML = "";
-
-        // Inicializar mes visualizado si no existe
+        
         if (typeof mesVisualizado === "undefined" || !(mesVisualizado instanceof Date)) {
             mesVisualizado = new Date();
         }
 
         const año = mesVisualizado.getFullYear();
         const mes = mesVisualizado.getMonth();
+        const keyMes = `${año}-${String(mes+1).padStart(2,'0')}`;
 
-        const meses = [
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        ];
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         
         if (titulo) titulo.innerText = `${meses[mes]} ${año}`;
 
-        // 1. 🚀 CREAR MAPA DE OCUPACIÓN (Hash Map)
-        // En lugar de buscar en el array 31 veces, creamos un diccionario de fechas ocupadas.
-        // Esto reduce la complejidad de O(N*31) a O(N + 31).
+        // 1. Obtener reservas de ESTE MES de la memoria
+        const reservasDelMes = memoriaMeses[keyMes] || [];
+        
+        // 2. Crear Mapa de Ocupación (Hash)
         const mapaOcupacion = {};
         
-        if (todasLasReservas && todasLasReservas.length > 0) {
-            todasLasReservas.forEach((r, indice) => {
-                // Ignorar canceladas
-                if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return;
-                if (!r.Fecha_Llegada || !r.Fecha_Salida) return;
+        reservasDelMes.forEach((r, indice) => {
+            if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return;
+            if (!r.Fecha_Llegada || !r.Fecha_Salida) return;
 
-                // Extraer fechas limpias (YYYY-MM-DD)
-                const inicioStr = String(r.Fecha_Llegada).substring(0, 10);
-                const finStr = String(r.Fecha_Salida).substring(0, 10);
-                
-                const inicioFecha = new Date(inicioStr + "T00:00:00");
-                const finFecha = new Date(finStr + "T00:00:00");
+            const inicioStr = String(r.Fecha_Llegada).substring(0, 10);
+            const finStr = String(r.Fecha_Salida).substring(0, 10);
+            
+            const inicioFecha = new Date(inicioStr + "T00:00:00");
+            const finFecha = new Date(finStr + "T00:00:00");
 
-                // Solo procesar si la reserva toca el mes que estamos dibujando
-                // Verificamos si el rango de la reserva se superpone con el mes actual
-                const mesInicio = new Date(año, mes, 1);
-                const mesFin = new Date(año, mes + 1, 0);
-
-                if (inicioFecha <= mesFin && finFecha > mesInicio) {
-                    // Iterar día por día dentro del rango de la reserva
-                    let diaActual = new Date(inicioFecha);
-                    while (diaActual < finFecha) {
-                        // Solo marcar si el día está dentro del mes visualizado
-                        if (diaActual.getFullYear() === año && diaActual.getMonth() === mes) {
-                            const fechaKey = diaActual.toISOString().split('T')[0]; // "YYYY-MM-DD"
-                            // Guardamos la reserva y su índice para el color
-                            mapaOcupacion[fechaKey] = { reserva: r, indice: indice };
-                        }
-                        diaActual.setDate(diaActual.getDate() + 1);
-                    }
+            // Iterar día por día dentro del mes visualizado
+            let diaActual = new Date(inicioFecha);
+            while (diaActual < finFecha) {
+                if (diaActual.getFullYear() === año && diaActual.getMonth() === mes) {
+                    const fechaKey = diaActual.toISOString().split('T')[0];
+                    mapaOcupacion[fechaKey] = { reserva: r, indice: indice };
                 }
-            });
-        }
+                diaActual.setDate(diaActual.getDate() + 1);
+            }
+        });
 
-        // 2. 🎨 DIBUJAR EL CALENDARIO (Usando el mapa para búsqueda instantánea)
+        // 3. Dibujar Calendario
         const primerDiaSemana = new Date(año, mes, 1).getDay();
         const diasEnMes = new Date(año, mes + 1, 0).getDate();
 
-        // Celdas vacías antes del primer día del mes
         const celdasVacias = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
         for (let i = 0; i < celdasVacias; i++) {
             const divVacio = document.createElement("div");
@@ -529,7 +590,6 @@ function renderizarCalendario() {
             contenedor.appendChild(divVacio);
         }
 
-        // Días del mes
         for (let i = 1; i <= diasEnMes; i++) {
             const mesStr = String(mes + 1).padStart(2, '0');
             const diaStr = String(i).padStart(2, '0');
@@ -538,29 +598,23 @@ function renderizarCalendario() {
             const diaDiv = document.createElement("div");
             diaDiv.innerText = i;
 
-            // ✅ BÚSQUEDA INSTANTÁNEA (O(1))
             const datoOcupado = mapaOcupacion[fechaCeldaStr];
 
             if (datoOcupado) {
-                // Día ocupado
                 const { reserva, indice } = datoOcupado;
                 const numeroColor = indice % 5;
-                
                 diaDiv.className = `p-2 border text-center rounded celda-ocupada user-color-${numeroColor}`;
                 
-                // Evento Click para ver detalles
                 diaDiv.onclick = () => {
                     const formatearFecha = (f) => {
                         if (!f) return "No definida";
                         const p = String(f).substring(0, 10).split("-");
                         return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : f;
                     };
-                    alert(`📌 DETALLES DE LA RESERVACIÓN\n--------------------------------------------\n👤 Huésped: ${reserva.Nombre_Completo || "Desconocido"}\n📱 Teléfono: ${reserva.Telefono || "No registrado"}\n📅 Llegada: ${formatearFecha(reserva.Fecha_Llegada)}\n📅 Salida: ${formatearFecha(reserva.Fecha_Salida)}\n💵 Total: $${reserva.Total_Reserva || 0} MN\n💰 Anticipo: $${reserva.Anticipo || 0} MN\n📝 Obs: ${reserva.Observaciones || "Ninguna"}`);
+                    alert(`📌 DETALLES:\n👤 ${reserva.Nombre_Completo || "Desconocido"}\n📅 Llegada: ${formatearFecha(reserva.Fecha_Llegada)}\n📅 Salida: ${formatearFecha(reserva.Fecha_Salida)}\n💵 Total: $${reserva.Total_Reserva || 0}`);
                 };
             } else {
-                // Día libre
                 diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
-                
                 diaDiv.onclick = () => {
                     const formLlegada = document.getElementById("Fecha_Llegada");
                     if (formLlegada) {
@@ -572,8 +626,8 @@ function renderizarCalendario() {
             contenedor.appendChild(diaDiv);
         }
     } catch (error) {
-        console.error("Falla en renderizarCalendario:", error);
-        contenedor.innerHTML = `<p style="color:#dc2626; padding:20px; text-align:center;">⚠️ Error interno al dibujar el calendario: ${error.message}</p>`;
+        console.error("Error renderizarCalendario:", error);
+        contenedor.innerHTML = `<p style="color:#dc2626; padding:20px; text-align:center;">⚠️ Error al dibujar calendario.</p>`;
     }
 }
 
@@ -601,7 +655,25 @@ function obtenerReservaPorFecha(fechaCalendarioStr) {
 }
 
 
-function cambiarMes(dir) { mesVisualizado.setMonth(mesVisualizado.getMonth() + dir); renderizarCalendario(); }
+// 🆕 CAMBIAR MES: Carga bajo demanda
+function cambiarMes(dir) {
+    mesVisualizado.setMonth(mesVisualizado.getMonth() + dir);
+    
+    const nuevoAnio = mesVisualizado.getFullYear();
+    const nuevoMes = mesVisualizado.getMonth();
+    const keyMes = `${nuevoAnio}-${String(nuevoMes+1).padStart(2,'0')}`;
+    
+    if (memoriaMeses[keyMes]) {
+        // Ya está cargado, solo renderizar
+        renderizarCalendario();
+    } else {
+        // Cargar desde servidor
+        console.log("🔄 Cargando mes nuevo:", keyMes);
+        cargarReservasParaRango(nuevoAnio, nuevoMes);
+    }
+}
+
+
 
 function verificarNocheOcupada(f) {
     if (!todasLasReservas || todasLasReservas.length === 0) return false;
