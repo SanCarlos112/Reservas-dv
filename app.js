@@ -391,7 +391,6 @@ function filtrarYRenderizarReservas() {
 }
 
 
-
 // Auxiliar para resetear los rangos de auditoría
 function limpiarFiltroAuditoria() {
     const d = document.getElementById("auditoria-desde");
@@ -602,15 +601,45 @@ function renderizarCalendario() {
                 const { reserva, indice } = datoOcupado;
                 const numeroColor = indice % 5;
                 diaDiv.className = `p-2 border text-center rounded celda-ocupada user-color-${numeroColor}`;
-                
-                diaDiv.onclick = () => {
-                    const formatearFecha = (f) => {
-                        if (!f) return "No definida";
-                        const p = String(f).substring(0, 10).split("-");
-                        return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : f;
-                    };
-                    alert(`📌 DETALLES:\n👤 ${reserva.Nombre_Completo || "Desconocido"}\n📅 Llegada: ${formatearFecha(reserva.Fecha_Llegada)}\n📅 Salida: ${formatearFecha(reserva.Fecha_Salida)}\n💵 Total: $${reserva.Total_Reserva || 0}`);
+                            
+            // 🆕 ALERT COMPLETO CON TODOS LOS DATOS
+            diaDiv.onclick = () => {
+                const formatearFecha = (f) => {
+                    if (!f) return "N/A";
+                    const p = String(f).substring(0, 10).split("-");
+                    return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : f;
                 };
+            
+                // Calcular saldo pendiente
+                const total = parseFloat(reserva.Total_Reserva) || 0;
+                const anticipo = parseFloat(reserva.Anticipo) || 0;
+                const pago = parseFloat(reserva.Pago_Liquidacion) || parseFloat(reserva.Pago) || 0;
+                const saldo = total - anticipo - pago;
+                
+                const estadoSaldo = saldo > 0 ? `⏳ Pendiente: $${saldo.toFixed(2)}` : `✅ Liquidado`;
+            
+                const mensaje = 
+                    `🏠 Condominio 112 - RESERVACIÓN COMPLETA\n` +
+                    `=======================================\n` +
+                    `👤 Huésped: ${reserva.Nombre_Completo || "N/A"}\n` +
+                    `📱 Teléfono: ${reserva.Telefono || "N/A"}\n` +
+                    `📅 Llegada: ${formatearFecha(reserva.Fecha_Llegada)}\n` +
+                    `📅 Salida: ${formatearFecha(reserva.Fecha_Salida)}\n` +
+                    `---------------------------------------\n` +
+                    `💰 TOTAL RESERVA: $${total.toFixed(2)}\n` +
+                    `  • Anticipo: $${anticipo.toFixed(2)}\n` +
+                    `  • Pago Liq: $${pago.toFixed(2)}\n` +
+                    `  • Saldo: ${estadoSaldo}\n` +
+                    `---------------------------------------\n` +
+                    `🧹 Limpieza: $${parseFloat(reserva.Pago_Limpieza)||0} (${formatearFecha(reserva.Fecha_Limpieza)})\n` +
+                    `🎟️ Brazaletes: $${parseFloat(reserva.Pago_Brazaletes)||0}\n` +
+                    `💼 Comisión: $${parseFloat(reserva.Comision_Pagada)||0} (${formatearFecha(reserva.Fecha_Comision)})\n` +
+                    `---------------------------------------\n` +
+                    `📝 Obs: ${reserva.Observaciones || "Ninguna"}`;
+            
+                alert(mensaje);
+            };
+            
             } else {
                 diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
                 diaDiv.onclick = () => {
