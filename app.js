@@ -506,7 +506,8 @@ async function guardarReserva(event) {
     }
 }
 
-// 🔑 FUNCIÓN AUXILIAR: Verifica si el rango elegido choca con otra reserva
+
+// 🆕 FUNCIÓN CORREGIDA: verificarConflictoFechas
 function verificarConflictoFechas(llegadaNueva, salidaNueva) {
     if (!todasLasReservas || todasLasReservas.length === 0) return false;
     
@@ -514,13 +515,22 @@ function verificarConflictoFechas(llegadaNueva, salidaNueva) {
     const inicioNuevo = new Date(llegadaNueva + "T00:00:00").getTime();
     const finNuevo = new Date(salidaNueva + "T00:00:00").getTime();
 
+    // 🔍 Búsqueda de conflictos
     return todasLasReservas.some(r => {
+        // 1. 🛡️ FILTRO CRÍTICO: Ignorar si la reserva está CANCELADA
+        // Si tiene estado "Cancelada", no cuenta como ocupación
+        if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") {
+            return false; // Salta esta reserva, no es un conflicto
+        }
+
+        // 2. Validar que la reserva tenga fechas válidas
         if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
         
-        const inicioExistente = new Date(r.Fecha_Llegada.split("T")[0] + "T00:00:00").getTime();
-        const finExistente = new Date(r.Fecha_Salida.split("T")[0] + "T00:00:00").getTime();
+        // Extraer fechas limpias
+        const inicioExistente = new Date(String(r.Fecha_Llegada).substring(0, 10) + "T00:00:00").getTime();
+        const finExistente = new Date(String(r.Fecha_Salida).substring(0, 10) + "T00:00:00").getTime();
 
-        // Fórmula de solapamiento de rangos: (InicioA < FinB) Y (FinA > InicioB)
+        // 3. Fórmula de solapamiento de rangos: (InicioA < FinB) Y (FinA > InicioB)
         return (inicioNuevo < finExistente && finNuevo > inicioExistente);
     });
 }
