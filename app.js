@@ -173,6 +173,10 @@ function actualizarDashboard() {
     let pendientes = 0;
 
     todasLasReservas.forEach(r => {
+        // 🚨 CANDADO NUEVO: Si la reserva está cancelada, no pintes sus fechas en el calendario
+        if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") {
+            return; // Salta a la siguiente reserva sin bloquear días
+        }
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
         
@@ -206,8 +210,12 @@ function filtrarYRenderizarReservas() {
 
     // 1. Filtrar las reservas de la base de datos
     let reservasFiltradas = todasLasReservas.filter(r => {
+        // 🚨 CANDADO DE CANCELACIONES: Si el estado es "Cancelada", se ignora por completo
+        if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return false;
+    
         if (!r.Nombre_Completo) return false;
 
+    
         // Filtro A: Buscador por Nombre o Teléfono
         const nombreTexto = r.Nombre_Completo ? String(r.Nombre_Completo).toLowerCase() : "";
         const cumpleTexto = nombreTexto.includes(textoBusqueda) || 
