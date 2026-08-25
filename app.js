@@ -918,3 +918,31 @@ async function ejecutarCancelacion(idReservacion) {
     }
 }
 
+
+// 🌙 LÓGICA DE TEMA OSCURO
+function toggleTheme() {
+    const body = document.body;
+    const btn = document.getElementById('theme-toggle');
+    
+    body.classList.toggle('dark-mode');
+    
+    if (body.classList.contains('dark-mode')) {
+        btn.innerText = '☀️'; // Icono de sol
+        localStorage.setItem('theme', 'dark');
+    } else {
+        btn.innerText = '🌙'; // Icono de luna
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+// 🌙 Cargar tema guardado al iniciar
+document.addEventListener("DOMContentLoaded", () => {
+    // ... (tu código existente) ...
+    
+    // Cargar preferencia guardada
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('theme-toggle').innerText = '☀️';
+    }
+});
