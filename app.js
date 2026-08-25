@@ -1,8 +1,6 @@
 // 🌐 PON AQUÍ TU ENLACE LARGO DE GOOGLE APPS SCRIPT
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhQ1e0ma32EtEx3U5Xih2wOJTJNI1hKPTZk4r4UqM0TnVmh7dtwGtKHOO3kaj8GbY5/exec";
 
-let todasLasReservas = [];
-let mesVisualizado = new Date(); 
 // 🆕 NUEVAS VARIABLES PARA MEMORIA Y CARGA INTELIGENTE
 let todasLasReservas = [];
 let mesVisualizado = new Date();
