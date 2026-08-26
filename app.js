@@ -28,6 +28,23 @@ function limpiarMoneda(valor) {
     return Number(String(valor).replace(/[^0-9.-]+/g, ""));
 }
 
+// 🆕 FUNCIÓN: Formatea campos numéricos al salir del campo (onblur)
+function formatearCampo(elemento, idCampo) {
+    const valor = elemento.value;
+    if (!valor) {
+        elemento.value = "";
+        return;
+    }
+    
+    const numero = Number(String(valor).replace(/[^0-9.-]+/g, ""));
+    if (isNaN(numero)) return;
+    
+    // Mostrar formato al usuario
+    elemento.value = formatearMoneda(numero);
+    
+    // Opcional: Guardar el valor limpio en un atributo data-raw para recuperar después
+    elemento.setAttribute('data-raw', numero);
+}
 
 // 🔄 CONFIGURACIÓN AL CARGAR LA PÁGINA
 document.addEventListener("DOMContentLoaded", () => { 
@@ -474,23 +491,45 @@ async function guardarReserva(event) {
         return;
     }
 
-        // 358: Arreglo de campos alineado de forma idéntica con el Backend (Google Sheets)
+    // 🛡️ TRATAMIENTO ESPECIAL DE LIQUIDACIÓN: Mapeamos los IDs del HTML a las variables del Backend
     const campos = [
-        "Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", "Total_Reserva", 
-        "Anticipo", "Fecha_Anticipo", "Pago_Limpieza", "Fecha_Limpieza", 
-        "Pago_Brazaletes", "Comision_Pagada", "Fecha_Comision", "Observaciones"
+        "Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", 
+        "Total_Reserva", "Anticipo", "Fecha_Anticipo", "Pago_Limpieza", 
+        "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", 
+        "Fecha_Comision", "Observaciones"
     ];
     
     let datos = {};
-    campos.forEach(id => { const el = document.getElementById(id); datos[id] = el ? el.value : ""; });
-
-    // 🛡️ TRATAMIENTO ESPECIAL DE LIQUIDACIÓN: Mapeamos los IDs del HTML a las variables del Backend
+    campos.forEach(id => {
+        const el = document.getElementById(id);
+        datos[id] = el ? el.value : "";
+    });
+    
+    // 🔥 TRATAMIENTO ESPECIAL: Obtener valores limpios de los campos de pago
+    const elTotal = document.getElementById("Total_Reserva");
+    datos["Total_Reserva"] = elTotal ? (elTotal.getAttribute('data-raw') || elTotal.value) : "";
+    
+    const elAnticipo = document.getElementById("Anticipo");
+    datos["Anticipo"] = elAnticipo ? (elAnticipo.getAttribute('data-raw') || elAnticipo.value) : "";
+    
+    const elPagoLimpieza = document.getElementById("Pago_Limpieza");
+    datos["Pago_Limpieza"] = elPagoLimpieza ? (elPagoLimpieza.getAttribute('data-raw') || elPagoLimpieza.value) : "";
+    
+    const elPagoBrazaletes = document.getElementById("Pago_Brazaletes");
+    datos["Pago_Brazaletes"] = elPagoBrazaletes ? (elPagoBrazaletes.getAttribute('data-raw') || elPagoBrazaletes.value) : "";
+    
+    const elComision = document.getElementById("Comision_Pagada");
+    datos["Comision_Pagada"] = elComision ? (elComision.getAttribute('data-raw') || elComision.value) : "";
+    
+    // Mapeo de Liquidación (Pago)
     const elPago = document.getElementById("Pago");
-    datos["Pago_Liquidacion"] = elPago ? elPago.value : "";
-
+    datos["Pago_Liquidacion"] = elPago ? (elPago.getAttribute('data-raw') || elPago.value) : "";
+    
+    // Fechas de pago (sin cambios)
     const elFechaPago = document.getElementById("Fecha_Pago");
     datos["Fecha_Pago_Liq"] = elFechaPago ? elFechaPago.value : "";
 
+    
     // 🔄 INYECTAMOS EL ID DE ACCIÓN COMPATIBLE CON TU CÓDIGO.GS
     if (idReserva) {
         datos["idReserva"] = idReserva; // 🚨 Cambiado de "Num_Reservacion" a "idReserva" para que active la edición
@@ -835,6 +874,30 @@ function abrirModalModificar(identificador) {
         "Pago_Limpieza", "Pago_Brazaletes", "Comision_Pagada", "Observaciones"
     ];
 
+// Formatear campos numéricos al cargar
+const camposNumericos = [
+    "Total_Reserva", "Anticipo", "Pago_Limpieza", 
+    "Pago_Brazaletes", "Comision_Pagada"
+];
+
+camposNumericos.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && reserva[id]) {
+        const valor = Number(reserva[id]);
+        el.value = formatearMoneda(valor);
+        el.setAttribute('data-raw', valor);
+    }
+});
+
+// Mapeo especial para Pago (Liquidación)
+const elPago = document.getElementById("Pago");
+if (elPago && (reserva.Pago_Liquidacion || reserva.Pago)) {
+    const valor = parseFloat(reserva.Pago_Liquidacion || reserva.Pago);
+    elPago.value = formatearMoneda(valor);
+    elPago.setAttribute('data-raw', valor);
+}
+
+    
     camposEstandar.forEach(id => {
         const elemento = document.getElementById(id);
         if (elemento) {
@@ -842,6 +905,8 @@ function abrirModalModificar(identificador) {
         }
     });
 
+
+    
     // 5. 🛡️ DEPURACIÓN DE LIQUIDACIÓN: Mapea con seguridad al id="Pago" de tu HTML
     const elementoPago = document.getElementById("Pago");
     if (elementoPago) {
