@@ -6,6 +6,28 @@ let todasLasReservas = [];
 let mesVisualizado = new Date();
 let memoriaMeses = {}; // Formato: "YYYY-MM" -> [Array de reservas]
 
+// 🆕 FUNCIÓN AUXILIAR: Formatea un número como moneda (pesos mexicanos)
+function formatearMoneda(valor) {
+    if (!valor && valor !== 0) return "";
+    
+    // Limpiamos el valor para obtener solo números
+    const numero = Number(String(valor).replace(/[^0-9.-]+/g, ""));
+    
+    if (isNaN(numero)) return "";
+    
+    // Formateamos con separador de miles y 2 decimales
+    return numero.toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+// 🆕 FUNCIÓN AUXILIAR: Limpia el valor formateado para obtner el número puro
+function limpiarMoneda(valor) {
+    if (!valor) return "";
+    return Number(String(valor).replace(/[^0-9.-]+/g, ""));
+}
+
 
 // 🔄 CONFIGURACIÓN AL CARGAR LA PÁGINA
 document.addEventListener("DOMContentLoaded", () => { 
@@ -27,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             console.log("🛑 Sincronización en pausa temporal: Usuario auditando o buscando reservas.");
         }
-    }, 30000); 
+    }, 50000); 
 });
 
 // 🔑 FUNCIÓN AUXILIAR: Detecta qué pestaña está viendo el usuario en su pantalla
@@ -135,26 +157,30 @@ function cambiarVista(vista) {
 }
 
 
-// 🆕 CARGA INICIAL: Hoy + 3 meses
+// 🆕 CARGA INICIAL AMPLIADA: 3 meses atrás + Hoy + 3 meses adelante
 async function obtenerReservas() {
     const contenedorCards = document.getElementById("contenedor-cards");
     
-    // Mensaje de carga si es la primera vez
     if (contenedorCards) {
         if (!contenedorCards.innerHTML || Object.keys(memoriaMeses).length === 0) {
-            contenedorCards.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservas...</p>`;
+            contenedorCards.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">⏳ Cargando reservas de los últimos 7 meses...</p>`;
         }
     }
 
     try {
         const hoy = new Date();
+        
+        // 🆕 NUEVO RANGO: 3 meses atrás hasta 3 meses adelante
+        const tresMesesAtras = new Date(hoy);
+        tresMesesAtras.setMonth(hoy.getMonth() - 3);
+        
         const tresMesesFuturos = new Date(hoy);
         tresMesesFuturos.setMonth(hoy.getMonth() + 3);
         
-        const inicio = hoy.toISOString().split('T')[0];
+        const inicio = tresMesesAtras.toISOString().split('T')[0];
         const fin = tresMesesFuturos.toISOString().split('T')[0];
 
-        // URL con parámetros de fecha
+        // URL con parámetros de fecha ampliada
         const urlConTiempoReal = `${WEB_APP_URL}?fechaInicio=${inicio}&fechaFin=${fin}&_=${new Date().getTime()}`;
         
         const respuesta = await fetch(urlConTiempoReal);
@@ -177,8 +203,8 @@ async function obtenerReservas() {
                 }
             });
 
-            console.log(`✅ Carga inicial exitosa: ${datos.length} reservas cargadas.`);
-            contenedorCards.innerHTML = ""; // Limpiar mensaje de carga
+            console.log(`✅ Carga inicial exitosa: ${datos.length} reservas cargadas (3 meses atrás + 3 adelante).`);
+            if (contenedorCards) contenedorCards.innerHTML = "";
             
             // 3. Actualizar UI
             actualizarDashboard();
@@ -195,6 +221,7 @@ async function obtenerReservas() {
         }
     }
 }
+
 
 // 🆕 CARGA BAJO DEMANDA: Para meses pasados o futuros que no están en memoria
 async function cargarReservasParaRango(anio, mes) {
@@ -232,17 +259,33 @@ async function cargarReservasParaRango(anio, mes) {
 }
 
 
-// 🆕 ACTUALIZAR DASHBOARD: Calcula totales desde memoriaMeses
+// 🆕 ACTUALIZAR DASHBOARD: Calcula totales SOLO del mes en curso
 function actualizarDashboard() {
-    // 1. Construir el array completo de reservas desde la memoria por meses
-    // Esto nos da todas las reservas que hemos cargado hasta el momento (Hoy + 3 meses, más las que el usuario haya navegado)
+    // Construir array completo de reservas desde memoria
     todasLasReservas = Object.values(memoriaMeses).flat();
+
+    const hoy = new Date();
+    const mesActual = hoy.getMonth();
+    const anioActual = hoy.getFullYear();
+    
+    // Filtrar solo reservas del mes actual
+    const reservasDelMesActual = todasLasReservas.filter(r => {
+        if (!r.Fecha_Llegada) return false;
+        const fechaStr = String(r.Fecha_Llegada).substring(0, 10);
+        const partes = fechaStr.split('-');
+        if (partes.length !== 3) return false;
+        
+        const mesReserva = parseInt(partes[1], 10) - 1;
+        const anioReserva = parseInt(partes[0], 10);
+        
+        return mesReserva === mesActual && anioReserva === anioActual;
+    });
 
     const totalReservasEl = document.getElementById("dash-total-reservas");
     const ingresosTotalesEl = document.getElementById("dash-ingresos-totales");
     const saldosPendientesEl = document.getElementById("dash-saldos-pendientes");
 
-    if (!todasLasReservas || todasLasReservas.length === 0) {
+    if (!reservasDelMesActual || reservasDelMesActual.length === 0) {
         if (totalReservasEl) totalReservasEl.innerText = "0";
         if (ingresosTotalesEl) ingresosTotalesEl.innerText = "$0.00";
         if (saldosPendientesEl) saldosPendientesEl.innerText = "$0.00";
@@ -252,26 +295,21 @@ function actualizarDashboard() {
     let ingresos = 0;
     let pendientes = 0;
 
-    todasLasReservas.forEach(r => {
-        // Ignorar canceladas para los totales
+    reservasDelMesActual.forEach(r => {
+        // Ignorar canceladas
         if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") {
             return;
         }
 
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
-        
-        // Lectura segura de liquidación
         const pago = parseFloat(r.Pago_Liquidacion) || parseFloat(r.Pago) || 0;
 
-        // Dinero recibido = Anticipo + Pagos posteriores
         ingresos += (anticipo + pago);
-        
-        // Saldo pendiente = Total - (Anticipo + Pagos)
         pendientes += (total - anticipo - pago);
     });
 
-    if (totalReservasEl) totalReservasEl.innerText = todasLasReservas.length;
+    if (totalReservasEl) totalReservasEl.innerText = reservasDelMesActual.length;
     if (ingresosTotalesEl) ingresosTotalesEl.innerText = `$${ingresos.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
     if (saldosPendientesEl) saldosPendientesEl.innerText = `$${pendientes.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
 }
