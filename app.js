@@ -6,45 +6,63 @@ let todasLasReservas = [];
 let mesVisualizado = new Date();
 let memoriaMeses = {}; // Formato: "YYYY-MM" -> [Array de reservas]
 
-// 🆕 FUNCIÓN AUXILIAR: Formatea un número como moneda (pesos mexicanos)
-function formatearMoneda(valor) {
-    if (!valor && valor !== 0) return "";
+// 🆕 FUNCIÓN: Maneja el input en tiempo real (solo permite números y un punto decimal)
+function manejarInputMoneda(input) {
+    // Permitir solo números y un punto decimal
+    let valor = input.value.replace(/[^0-9.]/g, '');
     
-    // Limpiamos el valor para obtener solo números
-    const numero = Number(String(valor).replace(/[^0-9.-]+/g, ""));
+    // Evitar múltiples puntos decimales
+    if (valor.split('.').length > 2) {
+        valor = valor.replace(/(\..*)\./g, '$1');
+    }
     
-    if (isNaN(numero)) return "";
-    
-    // Formateamos con separador de miles y 2 decimales
-    return numero.toLocaleString('es-MX', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+    // Actualizar el valor del input (aún sin formato visual)
+    input.value = valor;
 }
 
-// 🆕 FUNCIÓN AUXILIAR: Limpia el valor formateado para obtner el número puro
-function limpiarMoneda(valor) {
-    if (!valor) return "";
-    return Number(String(valor).replace(/[^0-9.-]+/g, ""));
-}
-
-// 🆕 FUNCIÓN: Formatea campos numéricos al salir del campo (onblur)
-function formatearCampo(elemento, idCampo) {
-    const valor = elemento.value;
-    if (!valor) {
-        elemento.value = "";
+// 🆕 FUNCIÓN: Formatea el valor al salir del campo (onblur)
+function formatearMonedaBlur(input) {
+    const valorCrudo = input.value;
+    if (!valorCrudo) {
+        input.value = "";
+        input.setAttribute('data-raw', "");
         return;
     }
     
-    const numero = Number(String(valor).replace(/[^0-9.-]+/g, ""));
-    if (isNaN(numero)) return;
+    const numero = parseFloat(valorCrudo);
+    if (isNaN(numero)) {
+        input.value = "";
+        input.setAttribute('data-raw', "");
+        return;
+    }
     
-    // Mostrar formato al usuario
-    elemento.value = formatearMoneda(numero);
+    // Formatear visualmente
+    input.value = numero.toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
     
-    // Opcional: Guardar el valor limpio en un atributo data-raw para recuperar después
-    elemento.setAttribute('data-raw', numero);
+    // Guardar el valor limpio para el envío
+    input.setAttribute('data-raw', numero);
 }
+
+// 🆕 FUNCIÓN: Obtiene el valor limpio de un campo de moneda
+function obtenerValorMoneda(idCampo) {
+    const input = document.getElementById(idCampo);
+    if (!input) return 0;
+    
+    // Priorizar data-raw, si no existe, limpiar el valor visual
+    const valorRaw = input.getAttribute('data-raw');
+    if (valorRaw !== null && valorRaw !== "") {
+        return parseFloat(valorRaw);
+    }
+    
+    // Si no hay data-raw, limpiar el valor visual (por si acaso)
+    const valorVisual = input.value;
+    const numero = parseFloat(valorVisual.replace(/,/g, ''));
+    return isNaN(numero) ? 0 : numero;
+}
+
 
 // 🔄 CONFIGURACIÓN AL CARGAR LA PÁGINA
 document.addEventListener("DOMContentLoaded", () => { 
@@ -492,12 +510,23 @@ async function guardarReserva(event) {
     }
 
     // 🛡️ TRATAMIENTO ESPECIAL DE LIQUIDACIÓN: Mapeamos los IDs del HTML a las variables del Backend
-    const campos = [
-        "Nombre_Completo", "Telefono", "Fecha_Llegada", "Fecha_Salida", 
-        "Total_Reserva", "Anticipo", "Fecha_Anticipo", "Pago_Limpieza", 
-        "Fecha_Limpieza", "Pago_Brazaletes", "Comision_Pagada", 
-        "Fecha_Comision", "Observaciones"
-    ];
+    const datos = {
+        "Nombre_Completo": document.getElementById("Nombre_Completo")?.value || "",
+        "Telefono": document.getElementById("Telefono")?.value || "",
+        "Fecha_Llegada": document.getElementById("Fecha_Llegada")?.value || "",
+        "Fecha_Salida": document.getElementById("Fecha_Salida")?.value || "",
+        "Total_Reserva": obtenerValorMoneda("Total_Reserva"),
+        "Anticipo": obtenerValorMoneda("Anticipo"),
+        "Fecha_Anticipo": document.getElementById("Fecha_Anticipo")?.value || "",
+        "Pago_Limpieza": obtenerValorMoneda("Pago_Limpieza"),
+        "Fecha_Limpieza": document.getElementById("Fecha_Limpieza")?.value || "",
+        "Pago_Brazaletes": obtenerValorMoneda("Pago_Brazaletes"),
+        "Comision_Pagada": obtenerValorMoneda("Comision_Pagada"),
+        "Fecha_Comision": document.getElementById("Fecha_Comision")?.value || "",
+        "Observaciones": document.getElementById("Observaciones")?.value || "",
+        "Pago_Liquidacion": obtenerValorMoneda("Pago"),
+        "Fecha_Pago_Liq": document.getElementById("Fecha_Pago")?.value || ""
+    };
     
     let datos = {};
     campos.forEach(id => {
@@ -889,6 +918,27 @@ camposNumericos.forEach(id => {
     }
 });
 
+// Formatear campos numéricos al cargar
+const camposMoneda = [
+    "Total_Reserva", "Anticipo", "Pago_Limpieza", 
+    "Pago_Brazaletes", "Comision_Pagada", "Pago"
+];
+
+camposMoneda.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        const valor = parseFloat(reserva[id] || 0);
+        // Formatear visualmente
+        el.value = valor.toLocaleString('es-MX', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        // Guardar valor limpio
+        el.setAttribute('data-raw', valor);
+    }
+});
+
+    
 // Mapeo especial para Pago (Liquidación)
 const elPago = document.getElementById("Pago");
 if (elPago && (reserva.Pago_Liquidacion || reserva.Pago)) {
