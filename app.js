@@ -509,7 +509,7 @@ async function guardarReserva(event) {
         return;
     }
 
-    // 🛡️ TRATAMIENTO ESPECIAL DE LIQUIDACIÓN: Mapeamos los IDs del HTML a las variables del Backend
+    // ✅ SOLO ESTO: La declaración con obtenerValorMoneda
     const datos = {
         "Nombre_Completo": document.getElementById("Nombre_Completo")?.value || "",
         "Telefono": document.getElementById("Telefono")?.value || "",
@@ -527,13 +527,16 @@ async function guardarReserva(event) {
         "Pago_Liquidacion": obtenerValorMoneda("Pago"),
         "Fecha_Pago_Liq": document.getElementById("Fecha_Pago")?.value || ""
     };
-    
-    let datos = {};
-    campos.forEach(id => {
-        const el = document.getElementById(id);
-        datos[id] = el ? el.value : "";
-    });
-    
+
+    // ✅ INYECTAMOS EL ID DE ACCIÓN COMPATIBLE CON TU CÓDIGO.GS
+    if (idReserva) {
+        datos["idReserva"] = idReserva;
+        datos["accion"] = "editar";
+    } else {
+        datos["accion"] = "crear";
+    } 
+
+
     // 🔥 TRATAMIENTO ESPECIAL: Obtener valores limpios de los campos de pago
     const elTotal = document.getElementById("Total_Reserva");
     datos["Total_Reserva"] = elTotal ? (elTotal.getAttribute('data-raw') || elTotal.value) : "";
@@ -817,7 +820,6 @@ function cambiarMes(dir) {
 }
 
 
-
 function verificarNocheOcupada(f) {
     if (!todasLasReservas || todasLasReservas.length === 0) return false;
     let txt = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
@@ -954,8 +956,6 @@ if (elPago && (reserva.Pago_Liquidacion || reserva.Pago)) {
             elemento.value = reserva[id] || "";
         }
     });
-
-
     
     // 5. 🛡️ DEPURACIÓN DE LIQUIDACIÓN: Mapea con seguridad al id="Pago" de tu HTML
     const elementoPago = document.getElementById("Pago");
