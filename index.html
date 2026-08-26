@@ -5,40 +5,238 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Reservaciones - DV</title>
     <style>
-        /* 🎨 DISEÑO LOCAL GARANTIZADO (SIN DEPENDER DE INTERNET) */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
-        header { background-color: #2563eb; color: white; padding: 12px 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
-        .badge { font-size: 12px; background-color: #1d4ed8; padding: 4px 8px; border-radius: 9999px; border: 1px solid #60a5fa; }
-        nav { background-color: white; border-bottom: 1px solid #e5e7eb; display: flex; position: sticky; top: 48px; z-index: 40; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        nav button { flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.2s; }
-        nav button.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: bold; }
-        main { flex: 1; max-width: 500px; width: 100%; margin: 0 auto; padding: 16px; box-sizing: border-box; }
-        section { display: flex; flex-direction: column; gap: 16px; }
-        .hidden { display: none !important; }
-        .banner { background: linear-gradient(to right, #3b82f6, #4f46e5); color: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .card-stat { background-color: white; padding: 16px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .stat-label { color: #9ca3af; font-size: 11px; font-weight: 600; text-transform: uppercase; display: block; }
-        .stat-val { font-size: 24px; font-weight: bold; display: block; margin-top: 8px; }
-        .text-green { color: #10b981; }
-        .input-text { width: 100%; background-color: white; padding: 12px; border-radius: 12px; border: 1px solid #d1d5db; box-sizing: border-box; font-size: 14px; }
-        form { background-color: white; padding: 20px; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 12px; }
-        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid #f3f4f6; padding-top: 12px; }
-        label { font-size: 12px; font-weight: 500; color: #4b5563; display: block; margin-bottom: 4px; }
-        .btn-submit { background-color: #2563eb; color: white; border: none; font-weight: bold; padding: 14px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
-        .btn-submit:hover { background-color: #1d4ed8; }
-        .card-reserva { background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 12px; }
-        .card-header { display: flex; justify-content: space-between; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
-        .folio { font-family: monospace; font-weight: bold; background-color: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #4b5563; }
-        .grid-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .date-box { background-color: #f9fafb; padding: 8px; border-radius: 8px; font-size: 12px; }
-        .date-label { color: #9ca3af; display: block; }
-        .date-val { font-weight: 600; color: #374151; }
-        .grid-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background-color: white; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; text-align: center; font-size: 12px; }
-        .day-name { font-weight: bold; color: #9ca3af; padding-bottom: 6px; }
-        .day-box { padding: 8px 0; border: 1px solid #e5e7eb; border-radius: 8px; }
-        .day-busy { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; font-weight: bold; }
-        .day-free { background-color: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+        /* 🎨 DISEÑO LOCAL GARANTIZADO */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .badge {
+            font-size: 12px;
+            background-color: #1d4ed8;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            border: 1px solid #60a5fa;
+        }
+        nav {
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            position: sticky;
+            top: 48px;
+            z-index: 40;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        nav button {
+            flex: 1;
+            padding: 12px 0;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        nav button.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            font-weight: bold;
+        }
+        main {
+            flex: 1;
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .banner {
+            background: linear-gradient(to right, #3b82f6, #4f46e5);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .grid-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .card-stat {
+            background-color: white;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .stat-label {
+            color: #9ca3af;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: block;
+        }
+        .stat-val {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+            margin-top: 8px;
+        }
+        .text-green {
+            color: #10b981;
+        }
+        .input-text {
+            width: 100%;
+            background-color: white;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #d1d5db;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .grid-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 12px;
+        }
+        label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #4b5563;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .btn-submit {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            font-weight: bold;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+        }
+        .btn-submit:hover {
+            background-color: #1d4ed8;
+        }
+        .card-reserva {
+            background-color: white;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 8px;
+        }
+        .folio {
+            font-family: monospace;
+            font-weight: bold;
+            background-color: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #4b5563;
+        }
+        .grid-dates {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .date-box {
+            background-color: #f9fafb;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        .date-label {
+            color: #9ca3af;
+            display: block;
+        }
+        .date-val {
+            font-weight: 600;
+            color: #374151;
+        }
+        .grid-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            background-color: white;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 12px;
+        }
+        .day-name {
+            font-weight: bold;
+            color: #9ca3af;
+            padding-bottom: 6px;
+        }
+        .day-box {
+            padding: 8px 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .day-busy {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+            font-weight: bold;
+        }
+        .day-free {
+            background-color: #ecfdf5;
+            color: #059669;
+            border-color: #a7f3d0;
+        }
 
         /* 🎨 PALETA DE COLORES DINÁMICOS PARA HÚESPEDES */
         .user-color-0 { background-color: #e0f2fe !important; color: #0369a1 !important; font-weight: bold !important; }
@@ -48,32 +246,86 @@
         .user-color-4 { background-color: #fce7f3 !important; color: #be185d !important; font-weight: bold !important; }
 
         /* Estilo base para celdas ocupadas */
-        #calendario-contenedor .celda-ocupada { cursor: pointer !important; border: 1px solid #d1d5db !important; }
-        
+        #calendario-contenedor .celda-ocupada {
+            cursor: pointer !important;
+            border: 1px solid #d1d5db !important;
+        }
+
         /* 📊 ARREGLO RESPONSIVO: DASHBOARD */
-        #vista-dashboard .grid { display: flex !important; flex-direction: column !important; gap: 16px !important; }
-        @media (min-width: 768px) { #vista-dashboard .grid { flex-direction: row !important; justify-content: space-between; } }
-        #vista-dashboard .bg-white { flex: 1 !important; padding: 24px !important; border-radius: 16px !important; border: 1px solid #f3f4f6 !important; background-color: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important; }
+        #vista-dashboard .grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+        }
+        @media (min-width: 768px) {
+            #vista-dashboard .grid {
+                flex-direction: row !important;
+                justify-content: space-between;
+            }
+        }
+        #vista-dashboard .bg-white {
+            flex: 1 !important;
+            padding: 24px !important;
+            border-radius: 16px !important;
+            border: 1px solid #f3f4f6 !important;
+            background-color: #ffffff !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        }
 
         /* 📅 ARREGLO NATIVO: CALENDARIO */
-        #vista-calendario .grid-cols-7 { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 8px !important; text-align: center !important; }
-        #calendario-contenedor div { padding: 12px !important; border: 1px solid #e5e7eb !important; border-radius: 8px !important; min-height: 45px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+        #vista-calendario .grid-cols-7 {
+            display: grid !important;
+            grid-template-columns: repeat(7, 1fr) !important;
+            gap: 8px !important;
+            text-align: center !important;
+        }
+        #calendario-contenedor div {
+            padding: 12px !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            min-height: 45px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
 
         /* 🗂️ ARREGLO NATIVO: CONTENEDOR DE TARJETAS */
-        #contenedor-cards { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; gap: 16px !important; }
-        #contenedor-cards div { background-color: #ffffff !important; padding: 20px !important; border-radius: 16px !important; border: 1px solid #f3f4f6 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important; }
+        #contenedor-cards {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+            gap: 16px !important;
+        }
+        #contenedor-cards div {
+            background-color: #ffffff !important;
+            padding: 20px !important;
+            border-radius: 16px !important;
+            border: 1px solid #f3f4f6 !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        }
 
         /* 📝 ARREGLO NATIVO: FORMULARIO */
-        #vista-formulario { background-color: #ffffff !important; padding: 24px !important; border-radius: 16px !important; border: 1px solid #f3f4f6 !important; max-width: 600px; margin: 0 auto; }
-        #vista-formulario input, #vista-formulario textarea { width: 100%; padding: 8px 12px; margin-top: 4px; margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
+        #vista-formulario {
+            background-color: #ffffff !important;
+            padding: 24px !important;
+            border-radius: 16px !important;
+            border: 1px solid #f3f4f6 !important;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        #vista-formulario input, #vista-formulario textarea {
+            width: 100%;
+            padding: 8px 12px;
+            margin-top: 4px;
+            margin-bottom: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
 
         /* 🔥 REGLA DE ORO: Forzar encendido y apagado de vistas */
-        .hidden { display: none !important; }
-
-        /* 🌙 TEMA OSCURO (Dark Mode) */
-        
-        #theme-toggle { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 4px 8px; border-radius: 50%; transition: transform 0.2s; }
-        #theme-toggle:hover { transform: scale(1.1); background-color: rgba(255,255,255,0.2); }
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -81,11 +333,7 @@
     <!-- 📱 BARRA SUPERIOR -->
     <header>
         <div>🏠 Portal DV</div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div class="badge">Equipo</div>
-            <!-- 🆕 BOTÓN DE TEMA -->
- 
-        </div>
+        <div class="badge">Equipo</div>
     </header>
 
     <!-- 🗺️ MENÚ DE MÓDULOS -->
@@ -95,8 +343,7 @@
         <button onclick="cambiarVista('lista')" id="btn-lista" style="flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer;">Reservas</button>
         <button onclick="cambiarVista('formulario')" id="btn-nuevo" style="flex: 1; padding: 12px 0; background: none; border: none; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer;">Agendar</button>
     </nav>
-
-    <!-- CONTENEDOR PRINCIPAL -->
+        <!-- CONTENEDOR PRINCIPAL -->
     <main>
 
         <!-- 1️⃣ VISTA: DASHBOARD -->
@@ -142,8 +389,7 @@
             </div>
             <div id="calendario-contenedor" class="grid grid-cols-7 gap-2 text-sm"></div>
         </div>
-
-        <!-- 3️⃣ VISTA: LISTA DE RESERVAS -->
+                <!-- 3️⃣ VISTA: LISTA DE RESERVAS -->
         <div id="vista-lista" class="hidden space-y-4">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
                 <input type="text" id="buscador-reservas" oninput="filtrarYRenderizarReservas()" placeholder="🔍 Buscar por huésped o teléfono..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
