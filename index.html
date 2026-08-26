@@ -436,41 +436,71 @@
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Salida *</label>
                         <input type="date" id="Fecha_Salida" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
+
+                    <!-- Total Reserva -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total Reserva ($)</label>
-                        <input type="number" id="Total_Reserva" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                        <input type="number" id="Total_Reserva" 
+                               oninput="this.value = this.value.replace(/[^0-9.-]+/g, ''); // Solo números crudos al escribir"
+                               onblur="formatearCampo(this, 'Total_Reserva')" 
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
+
+                    <!-- Anticipo -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Anticipo ($)</label>
-                        <input type="number" id="Anticipo" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                        <input type="number" id="Anticipo" 
+                               oninput="this.value = this.value.replace(/[^0-9.-]+/g, ''); // Solo números crudos"
+                               onblur="formatearCampo(this, 'Anticipo')" 
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
+                    
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Anticipo</label>
                         <input type="date" id="Fecha_Anticipo" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
+
+                    <!-- Pago Liquidación -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Liquidación / Pago ($)</label>
-                        <input type="number" id="Pago" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                        <input type="number" id="Pago" 
+                               oninput="this.value = this.value.replace(/[^0-9.-]+/g, ''); // Solo números crudos"
+                               onblur="formatearCampo(this, 'Pago')" 
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
+                    
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Pago Liq.</label>
                         <input type="date" id="Fecha_Pago" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
+                    <!-- Pago Limpieza -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Limpieza ($)</label>
-                        <input type="number" id="Pago_Limpieza" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                        <input type="number" id="Pago_Limpieza" 
+                               oninput="this.value = this.value.replace(/[^0-9.-]+/g, ''); // Solo números crudos"
+                               onblur="formatearCampo(this, 'Pago_Limpieza')" 
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Limpieza</label>
                         <input type="date" id="Fecha_Limpieza" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
+                    <!-- Pago Brazaletes -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pago Brazaletes ($)</label>
-                        <input type="number" id="Pago_Brazaletes" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                        <input type="number" id="Pago_Brazaletes" 
+                               oninput="this.value = this.value.replace(/[^0-9.-]+/g, ''); // Solo números crudos"
+                               onblur="formatearCampo(this, 'Pago_Brazaletes')" 
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
+                    
+                    <!-- Comisión Pagada -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Comisión Pagada ($)</label>
-                        <input type="number" id="Comision_Pagada" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
+                        <input type="number" id="Comision_Pagada" 
+                               oninput="this.value = this.value.replace(/[^0-9.-]+/g, ''); // Solo números crudos"
+                               onblur="formatearCampo(this, 'Comision_Pagada')" 
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha Comisión</label>
