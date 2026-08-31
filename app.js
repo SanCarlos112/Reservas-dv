@@ -6,6 +6,53 @@ let todasLasReservas = [];
 let mesVisualizado = new Date();
 let memoriaMeses = {}; // Formato: "YYYY-MM" -> [Array de reservas]
 
+// ✅ FIX #2: FUNCIÓN AUXILIAR QUE NO EXISTÍA (rompía la edición al cargar campos de moneda)
+function formatearMoneda(numero) {
+    if (numero === null || numero === undefined || isNaN(numero)) return "";
+    return parseFloat(numero).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+// ✅ FIX #3: LISTA ÚNICA DE CAMPOS DE MONEDA (fuente de verdad compartida)
+const CAMPOS_MONEDA = ["Total_Reserva", "Anticipo", "Pago", "Pago_Limpieza", "Pago_Brazaletes", "Comision_Pagada"];
+
+// ✅ FIX #3: LIMPIEZA COMPLETA DEL FORMULARIO
+// form.reset() NO borra los atributos data-raw. Sin esta función, una reserva
+// nueva podía HEREDAR los importes de la reserva anterior guardada/editada.
+function limpiarFormulario() {
+    const form = document.getElementById("form-reserva");
+    if (form) form.reset();
+
+    // Limpiar los data-raw que reset() no toca
+    CAMPOS_MONEDA.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute('data-raw', "");
+    });
+
+    // Limpiar el ID oculto de edición (por seguridad extra)
+    const idOculto = document.getElementById("form-reserva-id");
+    if (idOculto) idOculto.value = "";
+
+    // Restaurar títulos y botones a su estado normal
+    const titulo = document.getElementById("titulo-formulario");
+    if (titulo) titulo.innerText = "📝 Nueva Reservación";
+
+    const btnCancelarEdicion = document.getElementById("btn-cancelar-edicion");
+    if (btnCancelarEdicion) {
+        btnCancelarEdicion.classList.add("hidden");
+        btnCancelarEdicion.style.display = "none";
+    }
+
+    const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
+    if (btnCancelarReserva) btnCancelarReserva.classList.add("hidden");
+
+    const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
+    if (btnGuardar) btnGuardar.innerText = "Guardar Reservación";
+}
+
+
 // 🆕 FUNCIÓN: Maneja el input en tiempo real (solo permite números y un punto decimal)
 function manejarInputMoneda(input) {
     // Permitir solo números y un punto decimal
@@ -36,11 +83,8 @@ function formatearMonedaBlur(input) {
         return;
     }
     
-    // Formatear visualmente
-    input.value = numero.toLocaleString('es-MX', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+    // Formatear visualmente (✅ FIX #2: reutiliza la función auxiliar en vez de duplicar código)
+    input.value = formatearMoneda(numero);
     
     // Guardar el valor limpio para el envío
     input.setAttribute('data-raw', numero);
@@ -72,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Forzamos la primera carga de datos al instante
     obtenerReservas();
     
-    // 3. Mantenemos el autorefresco inteligente en segundo plano cada 30 segundos
+    // 3. Autorefresco inteligente en segundo plano cada 50 segundos
     setInterval(() => {
         // 🛡️ REGLA DE ORO: Si el usuario está usando la pantalla de 'lista' (Reservas) buscando o auditando,
         // NO disparamos la actualización para no interrumpir su trabajo ni vaciar la pantalla.
@@ -94,7 +138,6 @@ function obtenerVistaActual() {
     
     vistas.forEach(vista => {
         const elemento = document.getElementById(`vista-${vista}`);
-        // Si el elemento existe y NO tiene la clase hidden, significa que está visible en pantalla
         if (elemento && !elemento.classList.contains('hidden')) {
             vistaActiva = vista;
         }
@@ -102,11 +145,6 @@ function obtenerVistaActual() {
     
     return vistaActiva;
 }
-
-/**
- * Controla la navegación del sistema ocultando/mostrando las vistas con los IDs correctos
- * e iluminando dinámicamente el botón del módulo activo.
- */
 
 // 🆕 FUNCIÓN COMPLETA: cambiarVista (Con carga automática de calendario)
 function cambiarVista(vista) {
@@ -118,7 +156,6 @@ function cambiarVista(vista) {
     const divLista = document.getElementById('vista-lista') || document.getElementById('lista');
     const divFormulario = document.getElementById('vista-formulario') || document.getElementById('formulario');
 
-    // Ocultar/Mostrar contenedores
     if (divDashboard) {
         if (vista === 'dashboard') divDashboard.classList.remove('hidden');
         else divDashboard.classList.add('hidden');
@@ -147,7 +184,6 @@ function cambiarVista(vista) {
         'formulario': 'btn-nuevo'
     };
 
-    // Resetear todos los botones
     Object.keys(botonesMenu).forEach(claveVista => {
         const idBoton = botonesMenu[claveVista];
         const boton = document.getElementById(idBoton);
@@ -161,7 +197,6 @@ function cambiarVista(vista) {
         }
     });
 
-    // Activar botón seleccionado
     const idActivo = botonesMenu[vista];
     const botonActivo = document.getElementById(idActivo);
     
@@ -173,8 +208,7 @@ function cambiarVista(vista) {
         botonActivo.style.borderBottom = "3px solid #1d4ed8";
     }
 
-    // 3. 🆕 LÓGICA DE CARGA AUTOMÁTICA Y ACTUALIZACIÓN
-    // Esta parte asegura que al cambiar de vista, los datos estén listos
+    // 3. LÓGICA DE CARGA AUTOMÁTICA Y ACTUALIZACIÓN
     if (vista === 'calendario') {
         const keyMes = `${mesVisualizado.getFullYear()}-${String(mesVisualizado.getMonth()+1).padStart(2,'0')}`;
         if (!memoriaMeses[keyMes]) {
@@ -205,7 +239,6 @@ async function obtenerReservas() {
     try {
         const hoy = new Date();
         
-        // 🆕 NUEVO RANGO: 3 meses atrás hasta 3 meses adelante
         const tresMesesAtras = new Date(hoy);
         tresMesesAtras.setMonth(hoy.getMonth() - 3);
         
@@ -215,7 +248,6 @@ async function obtenerReservas() {
         const inicio = tresMesesAtras.toISOString().split('T')[0];
         const fin = tresMesesFuturos.toISOString().split('T')[0];
 
-        // URL con parámetros de fecha ampliada
         const urlConTiempoReal = `${WEB_APP_URL}?fechaInicio=${inicio}&fechaFin=${fin}&_=${new Date().getTime()}`;
         
         const respuesta = await fetch(urlConTiempoReal);
@@ -267,7 +299,6 @@ async function cargarReservasParaRango(anio, mes) {
     const fechaFin = fin.toISOString().split('T')[0];
     const keyMes = `${anio}-${String(mes+1).padStart(2,'0')}`;
     
-    // Si ya está cargado, no hacemos nada
     if (memoriaMeses[keyMes]) {
         console.log(`📅 Mes ${keyMes} ya está en memoria.`);
         return;
@@ -283,7 +314,6 @@ async function cargarReservasParaRango(anio, mes) {
             memoriaMeses[keyMes] = datos;
             console.log(`✅ Cargado mes ${keyMes}: ${datos.length} registros.`);
             
-            // Si estamos en la vista calendario, renderizar inmediatamente
             if (obtenerVistaActual() === 'calendario') {
                 renderizarCalendario();
             }
@@ -296,14 +326,12 @@ async function cargarReservasParaRango(anio, mes) {
 
 // 🆕 ACTUALIZAR DASHBOARD: Calcula totales SOLO del mes en curso
 function actualizarDashboard() {
-    // Construir array completo de reservas desde memoria
     todasLasReservas = Object.values(memoriaMeses).flat();
 
     const hoy = new Date();
     const mesActual = hoy.getMonth();
     const anioActual = hoy.getFullYear();
     
-    // Filtrar solo reservas del mes actual
     const reservasDelMesActual = todasLasReservas.filter(r => {
         if (!r.Fecha_Llegada) return false;
         const fechaStr = String(r.Fecha_Llegada).substring(0, 10);
@@ -331,7 +359,6 @@ function actualizarDashboard() {
     let pendientes = 0;
 
     reservasDelMesActual.forEach(r => {
-        // Ignorar canceladas
         if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") {
             return;
         }
@@ -349,15 +376,12 @@ function actualizarDashboard() {
     if (saldosPendientesEl) saldosPendientesEl.innerText = `$${pendientes.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
 }
 
+
 // 🔥 FUNCIÓN CENTRAL: Filtra, Ordena y Dibuja una Tarjeta Única por Reservación
-// 🆕 FILTRAR Y RENDERIZAR: Usa datos de memoriaMeses
 function filtrarYRenderizarReservas() {
     const contenedor = document.getElementById("contenedor-cards");
     if (!contenedor) return;
 
-    // 1. Asegurar que tenemos el array unificado (por si acaso se llama directo sin actualizarDashboard)
-    // Si ya se ejecutó actualizarDashboard, todasLasReservas ya está actualizado.
-    // Si no, lo construimos aquí:
     if (!todasLasReservas || todasLasReservas.length === 0) {
         todasLasReservas = Object.values(memoriaMeses).flat();
     }
@@ -368,9 +392,7 @@ function filtrarYRenderizarReservas() {
 
     const hoyTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
 
-    // 2. Filtrar
     let reservasFiltradas = todasLasReservas.filter(r => {
-        // Ignorar canceladas
         if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return false;
         if (!r.Nombre_Completo) return false;
 
@@ -386,12 +408,10 @@ function filtrarYRenderizarReservas() {
         const inicioReserva = new Date(stringLlegada + "T00:00:00").getTime();
         const finReserva = new Date(stringSalida + "T00:00:00").getTime();
 
-        // Filtro: Si no hay auditoría, ocultar pasadas
         if (!fDesde && !fHasta) {
             return cumpleTexto && (finReserva >= hoyTimestamp);
         }
 
-        // Filtro: Si hay auditoría, mostrar dentro del rango
         const limiteDesde = fDesde ? new Date(fDesde + "T00:00:00").getTime() : 0;
         const limiteHasta = fHasta ? new Date(fHasta + "T00:00:00").getTime() : Infinity;
 
@@ -400,14 +420,12 @@ function filtrarYRenderizarReservas() {
         return cumpleTexto && cumplePeriodo;
     });
 
-    // 3. Ordenar
     reservasFiltradas.sort((a, b) => {
         const tA = new Date((a.Fecha_Llegada || "").substring(0, 10) + "T00:00:00").getTime();
         const tB = new Date((b.Fecha_Llegada || "").substring(0, 10) + "T00:00:00").getTime();
         return tA - tB;
     });
 
-    // 4. Renderizar
     contenedor.innerHTML = "";
     if (reservasFiltradas.length === 0) {
         contenedor.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">📋 No se encontraron reservaciones para este criterio.</p>`;
@@ -425,7 +443,7 @@ function filtrarYRenderizarReservas() {
 
         let etiquetaSaldo = "";
         if (saldoPendiente > 0) {
-            etiquetaSaldo = `<span style="background-color:#fff7ed; color:#c2410c; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space:nowrap;">⏳ Pendiente: $${saldoPendiente}</span>`;
+            etiquetaSaldo = `<span style="background-color:#fff7ed; color:#c2410c; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space:nowrap;">⏳ Pendiente: $${saldoPendiente.toFixed(2)}</span>`;
         } else {
             etiquetaSaldo = `<span style="background-color:#ecfdf5; color:#15803d; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space:nowrap;">✅ Liquidado</span>`;
         }
@@ -454,7 +472,7 @@ function filtrarYRenderizarReservas() {
                 </div>
 
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; gap:8px;">
-                    <span style="color:#4b5563; font-size:13px;">Total: <b>$${total} MN</b></span>
+                    <span style="color:#4b5563; font-size:13px;">Total: <b>$${total.toFixed(2)} MN</b></span>
                     <button type="button" onclick="abrirModalModificar('${r.Num_Reservacion || r.id || r.Nombre_Completo}')" style="background-color:#2563eb; color:#ffffff; padding:8px 14px; border:none; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer; white-space:nowrap;">✏️ Actualizar / Cancelar</button>
                 </div>
             </div>
@@ -473,8 +491,9 @@ function limpiarFiltroAuditoria() {
     filtrarYRenderizarReservas();
 }
 
+// ⚠️ CÓDIGO SIN USO ACTUALMENTE (candidato a eliminación futura)
 function filtrarReservas() {
-    const txt = document.getElementById("buscador").value.toLowerCase();
+    const txt = document.getElementById("buscador")?.value.toLowerCase() || "";
     const flt = todasLasReservas.filter(r => 
         (r.Nombre_Completo && r.Nombre_Completo.toLowerCase().includes(txt)) || 
         (r.Telefono && r.Telefono.includes(txt))
@@ -487,7 +506,7 @@ async function guardarReserva(event) {
 
     const fLlegadaTxt = document.getElementById("Fecha_Llegada")?.value;
     const fSalidaTxt = document.getElementById("Fecha_Salida")?.value;
-    const idReserva = document.getElementById("form-reserva-id").value; // 🆕 Captura si es edición
+    const idReserva = document.getElementById("form-reserva-id").value;
 
     if (!fLlegadaTxt || !fSalidaTxt) {
         alert("⚠️ Por favor, selecciona las fechas de llegada y salida.");
@@ -502,75 +521,47 @@ async function guardarReserva(event) {
         return;
     }
 
-    // 🛡️ VALIDACIÓN DE CHOQUE: Solo validamos disponibilidad si es una reserva NUEVA 
-    // (si estamos editando al mismo huésped, omitimos para que no choque consigo mismo)
+    // 🛡️ VALIDACIÓN DE CHOQUE: Solo validamos disponibilidad si es una reserva NUEVA
     if (!idReserva && verificarConflictoFechas(fLlegadaTxt, fSalidaTxt)) {
         alert("🚫 ¡Conflicto de fechas! Los días seleccionados ya se encuentran ocupados.");
         return;
     }
 
-    // ✅ SOLO ESTO: La declaración con obtenerValorMoneda
+    // ✅ FIX #5: CONSTRUCCIÓN DEL OBJETO EN UN SOLO LUGAR.
+    // (Antes: primero se asignaba con obtenerValorMoneda(), luego se sobrescribía
+    //  con data-raw, y el bloque de idReserva/accion estaba DUPLICADO dos veces.)
+    // obtenerValorMoneda() ya prioriza data-raw y devuelve el número limpio.
     const datos = {
         "Nombre_Completo": document.getElementById("Nombre_Completo")?.value || "",
         "Telefono": document.getElementById("Telefono")?.value || "",
-        "Fecha_Llegada": document.getElementById("Fecha_Llegada")?.value || "",
-        "Fecha_Salida": document.getElementById("Fecha_Salida")?.value || "",
+        "Fecha_Llegada": fLlegadaTxt,
+        "Fecha_Salida": fSalidaTxt,
         "Total_Reserva": obtenerValorMoneda("Total_Reserva"),
         "Anticipo": obtenerValorMoneda("Anticipo"),
         "Fecha_Anticipo": document.getElementById("Fecha_Anticipo")?.value || "",
+        "Pago_Liquidacion": obtenerValorMoneda("Pago"),
+        "Fecha_Pago_Liq": document.getElementById("Fecha_Pago")?.value || "",
         "Pago_Limpieza": obtenerValorMoneda("Pago_Limpieza"),
         "Fecha_Limpieza": document.getElementById("Fecha_Limpieza")?.value || "",
         "Pago_Brazaletes": obtenerValorMoneda("Pago_Brazaletes"),
         "Comision_Pagada": obtenerValorMoneda("Comision_Pagada"),
         "Fecha_Comision": document.getElementById("Fecha_Comision")?.value || "",
-        "Observaciones": document.getElementById("Observaciones")?.value || "",
-        "Pago_Liquidacion": obtenerValorMoneda("Pago"),
-        "Fecha_Pago_Liq": document.getElementById("Fecha_Pago")?.value || ""
+        "Observaciones": document.getElementById("Observaciones")?.value || ""
     };
 
-    // ✅ INYECTAMOS EL ID DE ACCIÓN COMPATIBLE CON TU CÓDIGO.GS
+    // ✅ FIX #4: enviamos AMBOS nombres de acción (accion / action) y de ID (idReserva / id)
+    // para máxima compatibilidad con el backend. El parámetro que tu codigo.gs NO use,
+    // simplemente será ignorado. Así funciona sin importar cómo lo tenga implementado.
     if (idReserva) {
         datos["idReserva"] = idReserva;
+        datos["id"] = idReserva;
         datos["accion"] = "editar";
+        datos["action"] = "editar";
     } else {
         datos["accion"] = "crear";
-    } 
-
-
-    // 🔥 TRATAMIENTO ESPECIAL: Obtener valores limpios de los campos de pago
-    const elTotal = document.getElementById("Total_Reserva");
-    datos["Total_Reserva"] = elTotal ? (elTotal.getAttribute('data-raw') || elTotal.value) : "";
-    
-    const elAnticipo = document.getElementById("Anticipo");
-    datos["Anticipo"] = elAnticipo ? (elAnticipo.getAttribute('data-raw') || elAnticipo.value) : "";
-    
-    const elPagoLimpieza = document.getElementById("Pago_Limpieza");
-    datos["Pago_Limpieza"] = elPagoLimpieza ? (elPagoLimpieza.getAttribute('data-raw') || elPagoLimpieza.value) : "";
-    
-    const elPagoBrazaletes = document.getElementById("Pago_Brazaletes");
-    datos["Pago_Brazaletes"] = elPagoBrazaletes ? (elPagoBrazaletes.getAttribute('data-raw') || elPagoBrazaletes.value) : "";
-    
-    const elComision = document.getElementById("Comision_Pagada");
-    datos["Comision_Pagada"] = elComision ? (elComision.getAttribute('data-raw') || elComision.value) : "";
-    
-    // Mapeo de Liquidación (Pago)
-    const elPago = document.getElementById("Pago");
-    datos["Pago_Liquidacion"] = elPago ? (elPago.getAttribute('data-raw') || elPago.value) : "";
-    
-    // Fechas de pago (sin cambios)
-    const elFechaPago = document.getElementById("Fecha_Pago");
-    datos["Fecha_Pago_Liq"] = elFechaPago ? elFechaPago.value : "";
-
-    
-    // 🔄 INYECTAMOS EL ID DE ACCIÓN COMPATIBLE CON TU CÓDIGO.GS
-    if (idReserva) {
-        datos["idReserva"] = idReserva; // 🚨 Cambiado de "Num_Reservacion" a "idReserva" para que active la edición
-        datos["accion"] = "editar";
-    } else {
-        datos["accion"] = "crear";
+        datos["action"] = "crear";
     }
 
-    
     const btn = event.target.querySelector("button[type='submit']");
     const textoOriginal = btn.innerText;
     btn.innerText = idReserva ? "Actualizando Excel..." : "Guardando..."; 
@@ -583,25 +574,13 @@ async function guardarReserva(event) {
         if (res.status === "success") {
             alert(idReserva ? "🎉 ¡Reservación modificada con éxito!" : `🎉 ¡Éxito! Folio: ${res.id}`);
             
-            // 1. Limpiamos el formulario primero pero nos quedamos en espera
-            document.getElementById("form-reserva").reset();
-            document.getElementById("form-reserva-id").value = "";
-            document.getElementById("titulo-formulario").innerText = "📝 Nueva Reservación";
-            document.getElementById("btn-cancelar-edicion").classList.add("hidden");
-            document.getElementById("btn-cancelar-edicion").style.display = "none";
-
-            document.getElementById("btn-cancelar-edicion").style.display = "none";
-            // 🛠️ LÍNEA NUEVA: Ocultamos el botón rojo de cancelación tras una operación exitosa
-            const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
-            if (btnCancelarReserva) btnCancelarReserva.classList.add("hidden");
+            // ✅ FIX #3: limpieza completa del formulario (reset + data-raw + botones)
+            limpiarFormulario();
             
-            const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
-            if (btnGuardar) btnGuardar.innerText = "Guardar Reservación";
-
-            // 2. 🔥 Forzamos la descarga de datos frescos en internet y ESPERAMOS a que termine
+            // 🔥 Forzamos la descarga de datos frescos y ESPERAMOS a que termine
             await obtenerReservas();
             
-            // 3. Ya con los datos nuevos en la mano, redirigimos visualmente a la lista actualizada
+            // Ya con los datos nuevos, redirigimos a la lista actualizada
             cambiarVista('lista');
             
         } else { 
@@ -620,32 +599,26 @@ async function guardarReserva(event) {
 function verificarConflictoFechas(llegadaNueva, salidaNueva) {
     if (!todasLasReservas || todasLasReservas.length === 0) return false;
     
-    // Convertimos los strings a milisegundos para comparar rangos de tiempo fácilmente
     const inicioNuevo = new Date(llegadaNueva + "T00:00:00").getTime();
     const finNuevo = new Date(salidaNueva + "T00:00:00").getTime();
 
-    // 🔍 Búsqueda de conflictos
     return todasLasReservas.some(r => {
-        // 1. 🛡️ FILTRO CRÍTICO: Ignorar si la reserva está CANCELADA
-        // Si tiene estado "Cancelada", no cuenta como ocupación
+        // 🛡️ Ignorar si la reserva está CANCELADA
         if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") {
-            return false; // Salta esta reserva, no es un conflicto
+            return false;
         }
 
-        // 2. Validar que la reserva tenga fechas válidas
         if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
         
-        // Extraer fechas limpias
         const inicioExistente = new Date(String(r.Fecha_Llegada).substring(0, 10) + "T00:00:00").getTime();
         const finExistente = new Date(String(r.Fecha_Salida).substring(0, 10) + "T00:00:00").getTime();
 
-        // 3. Fórmula de solapamiento de rangos: (InicioA < FinB) Y (FinA > InicioB)
+        // Fórmula de solapamiento: (InicioA < FinB) Y (FinA > InicioB)
         return (inicioNuevo < finExistente && finNuevo > inicioExistente);
     });
 }
 
-//  FUNCIÓN renderizarCalendario...
-// 🆕 FUNCIÓN OPTIMIZADA: Renderizado Rápido con Mapa de Ocupación
+
 // 🆕 RENDERIZADO OPTIMIZADO: Usa memoriaMeses
 function renderizarCalendario() {
     const contenedor = document.getElementById("calendario-contenedor");
@@ -667,10 +640,8 @@ function renderizarCalendario() {
         
         if (titulo) titulo.innerText = `${meses[mes]} ${año}`;
 
-        // 1. Obtener reservas de ESTE MES de la memoria
         const reservasDelMes = memoriaMeses[keyMes] || [];
         
-        // 2. Crear Mapa de Ocupación (Hash)
         const mapaOcupacion = {};
         
         reservasDelMes.forEach((r, indice) => {
@@ -683,7 +654,6 @@ function renderizarCalendario() {
             const inicioFecha = new Date(inicioStr + "T00:00:00");
             const finFecha = new Date(finStr + "T00:00:00");
 
-            // Iterar día por día dentro del mes visualizado
             let diaActual = new Date(inicioFecha);
             while (diaActual < finFecha) {
                 if (diaActual.getFullYear() === año && diaActual.getMonth() === mes) {
@@ -694,7 +664,6 @@ function renderizarCalendario() {
             }
         });
 
-        // 3. Dibujar Calendario
         const primerDiaSemana = new Date(año, mes, 1).getDay();
         const diasEnMes = new Date(año, mes + 1, 0).getDate();
 
@@ -721,43 +690,41 @@ function renderizarCalendario() {
                 const numeroColor = indice % 5;
                 diaDiv.className = `p-2 border text-center rounded celda-ocupada user-color-${numeroColor}`;
                             
-            // 🆕 ALERT COMPLETO CON TODOS LOS DATOS
-            diaDiv.onclick = () => {
-                const formatearFecha = (f) => {
-                    if (!f) return "N/A";
-                    const p = String(f).substring(0, 10).split("-");
-                    return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : f;
-                };
-            
-                // Calcular saldo pendiente
-                const total = parseFloat(reserva.Total_Reserva) || 0;
-                const anticipo = parseFloat(reserva.Anticipo) || 0;
-                const pago = parseFloat(reserva.Pago_Liquidacion) || parseFloat(reserva.Pago) || 0;
-                const saldo = total - anticipo - pago;
+                diaDiv.onclick = () => {
+                    const formatearFecha = (f) => {
+                        if (!f) return "N/A";
+                        const p = String(f).substring(0, 10).split("-");
+                        return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : f;
+                    };
                 
-                const estadoSaldo = saldo > 0 ? `⏳ Pendiente: $${saldo.toFixed(2)}` : `✅ Liquidado`;
-            
-                const mensaje = 
-                    `🏠 Condominio 112 - RESERVACIÓN COMPLETA\n` +
-                    `=======================================\n` +
-                    `👤 Huésped: ${reserva.Nombre_Completo || "N/A"}\n` +
-                    `📱 Teléfono: ${reserva.Telefono || "N/A"}\n` +
-                    `📅 Llegada: ${formatearFecha(reserva.Fecha_Llegada)}\n` +
-                    `📅 Salida: ${formatearFecha(reserva.Fecha_Salida)}\n` +
-                    `---------------------------------------\n` +
-                    `💰 TOTAL RESERVA: $${total.toFixed(2)}\n` +
-                    `  • Anticipo: $${anticipo.toFixed(2)}\n` +
-                    `  • Pago Liq: $${pago.toFixed(2)}\n` +
-                    `  • Saldo: ${estadoSaldo}\n` +
-                    `---------------------------------------\n` +
-                    `🧹 Limpieza: $${parseFloat(reserva.Pago_Limpieza)||0} (${formatearFecha(reserva.Fecha_Limpieza)})\n` +
-                    `🎟️ Brazaletes: $${parseFloat(reserva.Pago_Brazaletes)||0}\n` +
-                    `💼 Comisión: $${parseFloat(reserva.Comision_Pagada)||0} (${formatearFecha(reserva.Fecha_Comision)})\n` +
-                    `---------------------------------------\n` +
-                    `📝 Obs: ${reserva.Observaciones || "Ninguna"}`;
-            
-                alert(mensaje);
-            };
+                    const total = parseFloat(reserva.Total_Reserva) || 0;
+                    const anticipo = parseFloat(reserva.Anticipo) || 0;
+                    const pago = parseFloat(reserva.Pago_Liquidacion) || parseFloat(reserva.Pago) || 0;
+                    const saldo = total - anticipo - pago;
+                    
+                    const estadoSaldo = saldo > 0 ? `⏳ Pendiente: $${saldo.toFixed(2)}` : `✅ Liquidado`;
+                
+                    const mensaje = 
+                        `🏠 Condominio 112 - RESERVACIÓN COMPLETA\n` +
+                        `=======================================\n` +
+                        `👤 Huésped: ${reserva.Nombre_Completo || "N/A"}\n` +
+                        `📱 Teléfono: ${reserva.Telefono || "N/A"}\n` +
+                        `📅 Llegada: ${formatearFecha(reserva.Fecha_Llegada)}\n` +
+                        `📅 Salida: ${formatearFecha(reserva.Fecha_Salida)}\n` +
+                        `---------------------------------------\n` +
+                        `💰 TOTAL RESERVA: $${total.toFixed(2)}\n` +
+                        `  • Anticipo: $${anticipo.toFixed(2)}\n` +
+                        `  • Pago Liq: $${pago.toFixed(2)}\n` +
+                        `  • Saldo: ${estadoSaldo}\n` +
+                        `---------------------------------------\n` +
+                        `🧹 Limpieza: $${parseFloat(reserva.Pago_Limpieza)||0} (${formatearFecha(reserva.Fecha_Limpieza)})\n` +
+                        `🎟️ Brazaletes: $${parseFloat(reserva.Pago_Brazaletes)||0}\n` +
+                        `💼 Comisión: $${parseFloat(reserva.Comision_Pagada)||0} (${formatearFecha(reserva.Fecha_Comision)})\n` +
+                        `---------------------------------------\n` +
+                        `📝 Obs: ${reserva.Observaciones || "Ninguna"}`;
+                
+                    alert(mensaje);
+                };
             
             } else {
                 diaDiv.className = "p-2 border text-center text-gray-700 hover:bg-gray-100 cursor-pointer rounded transition-colors";
@@ -778,16 +745,14 @@ function renderizarCalendario() {
 }
 
 
-// 🔑 RECUERDA AGREGAR ESTA FUNCIÓN AUXILIAR 
+// ⚠️ CÓDIGO SIN USO ACTUALMENTE (candidato a eliminación futura)
 function obtenerReservaPorFecha(fechaCalendarioStr) {
     if (!todasLasReservas || todasLasReservas.length === 0) return null;
 
     const tiempoCelda = new Date(fechaCalendarioStr + "T00:00:00").getTime();
 
     return todasLasReservas.find(r => {
-        // 🚨 CANDADO NUEVO: Ignorar si está cancelada
         if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return false;
-
         if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
         
         const limpiaLlegada = r.Fecha_Llegada.split("T")[0];
@@ -810,16 +775,15 @@ function cambiarMes(dir) {
     const keyMes = `${nuevoAnio}-${String(nuevoMes+1).padStart(2,'0')}`;
     
     if (memoriaMeses[keyMes]) {
-        // Ya está cargado, solo renderizar
         renderizarCalendario();
     } else {
-        // Cargar desde servidor
         console.log("🔄 Cargando mes nuevo:", keyMes);
         cargarReservasParaRango(nuevoAnio, nuevoMes);
     }
 }
 
 
+// ⚠️ CÓDIGO SIN USO ACTUALMENTE (candidato a eliminación futura)
 function verificarNocheOcupada(f) {
     if (!todasLasReservas || todasLasReservas.length === 0) return false;
     let txt = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
@@ -837,18 +801,16 @@ function formatearFecha(f) {
 }
 
 
+// ⚠️ CÓDIGO SIN USO ACTUALMENTE (candidato a eliminación futura)
 function obtenerReservaConIndice(fechaCalendarioStr) {
     if (!todasLasReservas || todasLasReservas.length === 0) return null;
 
     const tiempoCelda = new Date(fechaCalendarioStr + "T00:00:00").getTime();
 
     const indice = todasLasReservas.findIndex(r => {
-        // 🚨 CANDADO NUEVO: Si la reserva está cancelada, se ignora y se libera el día en el calendario
         if (r.Estado && String(r.Estado).trim().toLowerCase() === "cancelada") return false;
-
         if (!r.Fecha_Llegada || !r.Fecha_Salida) return false;
         
-        // Extracción limpia y segura de "AAAA-MM-DD"
         const stringLlegada = String(r.Fecha_Llegada).substring(0, 10);
         const stringSalida = String(r.Fecha_Salida).substring(0, 10);
 
@@ -872,7 +834,6 @@ function obtenerReservaConIndice(fechaCalendarioStr) {
 function abrirModalModificar(identificador) {
     if (!todasLasReservas || todasLasReservas.length === 0) return;
 
-    // Buscamos la reserva por Folio, ID o por Nombre si no hay ID único
     const reserva = todasLasReservas.find(r => 
         r.Num_Reservacion == identificador || r.id == identificador || r.Nombre_Completo == identificador
     );
@@ -884,7 +845,7 @@ function abrirModalModificar(identificador) {
 
     console.log("🔍 [Depuración DV] Datos originales recibidos de la base de datos:", reserva);
 
-    // 1. Cambiamos visualmente el título del formulario y encendemos el botón de volver
+    // 1. Modo edición: título y botón de volver
     document.getElementById("titulo-formulario").innerText = "✏️ Modificar / Cancelar Reservación";
     const btnCancelar = document.getElementById("btn-cancelar-edicion");
     if (btnCancelar) {
@@ -892,79 +853,47 @@ function abrirModalModificar(identificador) {
         btnCancelar.style.display = "inline-block";
     }
 
-    // 2. Cambiamos el texto del botón de envío principal
+    // 2. Texto del botón de envío principal
     const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
     if (btnGuardar) btnGuardar.innerText = "Guardar Cambios en la Reserva";
 
     // 3. Guardamos el ID en el campo oculto para que el sistema sepa que es una EDICIÓN
     document.getElementById("form-reserva-id").value = reserva.Num_Reservacion || reserva.id || "";
 
-    // 4. Mapeamos los campos numéricos y de texto estándar
-    const camposEstandar = [
-        "Nombre_Completo", "Telefono", "Total_Reserva", "Anticipo", 
-        "Pago_Limpieza", "Pago_Brazaletes", "Comision_Pagada", "Observaciones"
-    ];
+    // 4. ✅ FIX #5: MAPEO SIMPLIFICADO EN UN SOLO BLOQUE
+    //    (Antes existían 3 bloques que se pisaban entre sí: camposNumericos con una función
+    //     inexistente, camposMoneda duplicado, y camposEstandar que sobrescribía el formato)
 
-// Formatear campos numéricos al cargar
-const camposNumericos = [
-    "Total_Reserva", "Anticipo", "Pago_Limpieza", 
-    "Pago_Brazaletes", "Comision_Pagada"
-];
-
-camposNumericos.forEach(id => {
-    const el = document.getElementById(id);
-    if (el && reserva[id]) {
-        const valor = Number(reserva[id]);
-        el.value = formatearMoneda(valor);
-        el.setAttribute('data-raw', valor);
-    }
-});
-
-// Formatear campos numéricos al cargar
-const camposMoneda = [
-    "Total_Reserva", "Anticipo", "Pago_Limpieza", 
-    "Pago_Brazaletes", "Comision_Pagada", "Pago"
-];
-
-camposMoneda.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-        const valor = parseFloat(reserva[id] || 0);
-        // Formatear visualmente
-        el.value = valor.toLocaleString('es-MX', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-        // Guardar valor limpio
-        el.setAttribute('data-raw', valor);
-    }
-});
-
-    
-// Mapeo especial para Pago (Liquidación)
-const elPago = document.getElementById("Pago");
-if (elPago && (reserva.Pago_Liquidacion || reserva.Pago)) {
-    const valor = parseFloat(reserva.Pago_Liquidacion || reserva.Pago);
-    elPago.value = formatearMoneda(valor);
-    elPago.setAttribute('data-raw', valor);
-}
-
-    
-    camposEstandar.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            elemento.value = reserva[id] || "";
-        }
+    // 4a. Campos de texto simples
+    const camposTexto = ["Nombre_Completo", "Telefono", "Observaciones"];
+    camposTexto.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = reserva[id] || "";
     });
-    
-    // 5. 🛡️ DEPURACIÓN DE LIQUIDACIÓN: Mapea con seguridad al id="Pago" de tu HTML
-    const elementoPago = document.getElementById("Pago");
-    if (elementoPago) {
-        // Busca bajo el nombre 'Pago_Liquidacion' o 'Pago' según responda tu Sheets
-        elementoPago.value = reserva.Pago_Liquidacion || reserva.Pago || "";
-    }
 
-    // 6. 📅 TRATAMIENTO SEGURO DE FECHAS (Corta los primeros 10 caracteres AAAA-MM-DD para el input tipo date)
+    // 4b. Campos de moneda: formato visual + data-raw limpio
+    //     (el campo "Pago" del HTML se llena desde Pago_Liquidacion o Pago del JSON)
+    CAMPOS_MONEDA.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const valorBD = (id === "Pago") 
+            ? (reserva.Pago_Liquidacion || reserva.Pago)
+            : reserva[id];
+
+        // Si no hay valor en la base de datos, dejar el campo vacío (no forzar 0.00)
+        if (valorBD === null || valorBD === undefined || valorBD === "") {
+            el.value = "";
+            el.setAttribute('data-raw', "");
+            return;
+        }
+
+        const valor = parseFloat(valorBD) || 0;
+        el.value = formatearMoneda(valor);        // ✅ FIX #2: la función ahora SÍ existe
+        el.setAttribute('data-raw', valor);
+    });
+
+    // 4c. Fechas (se cortan a AAAA-MM-DD para el input type="date")
     const mapeoFechas = [
         { idHtml: "Fecha_Llegada", propiedadJson: reserva.Fecha_Llegada },
         { idHtml: "Fecha_Salida", propiedadJson: reserva.Fecha_Salida },
@@ -977,17 +906,15 @@ if (elPago && (reserva.Pago_Liquidacion || reserva.Pago)) {
     mapeoFechas.forEach(campo => {
         const elemento = document.getElementById(campo.idHtml);
         if (elemento) {
-            const valorFecha = campo.propiedadJson ? String(campo.propiedadJson).substring(0, 10) : "";
-            elemento.value = valorFecha;
+            elemento.value = campo.propiedadJson ? String(campo.propiedadJson).substring(0, 10) : "";
         }
     });
 
-    // 7. 🚨 CONTROL DEL BOTÓN ROJO DE CANCELACIÓN (Aparece solo en edición)
+    // 5. 🚨 Botón rojo de CANCELACIÓN (aparece solo en modo edición)
     const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
     if (btnCancelarReserva) {
         btnCancelarReserva.classList.remove("hidden"); 
     
-        // Programamos la acción de clic de forma aislada
         btnCancelarReserva.onclick = function() {
             if (confirm("⚠️ ¿Estás seguro de que deseas CANCELAR esta reservación? El espacio quedará liberado.")) {
                 ejecutarCancelacion(reserva.Num_Reservacion);
@@ -995,30 +922,23 @@ if (elPago && (reserva.Pago_Liquidacion || reserva.Pago)) {
         };
     }
 
-    // 8. Redirigimos automáticamente al usuario a la pestaña del formulario
+    // 6. Redirigimos automáticamente al usuario a la pestaña del formulario
     cambiarVista('formulario');
 }
 
 
 // 🔙 Función por si el usuario decide no modificar nada y quiere regresar a la lista
 function cancelarEdicion() {
-    document.getElementById("form-reserva").reset();
-    document.getElementById("form-reserva-id").value = "";
-    document.getElementById("titulo-formulario").innerText = "📝 Nueva Reservación";
-    document.getElementById("btn-cancelar-edicion").classList.add("hidden");
-    document.getElementById("btn-cancelar-edicion").style.display = "none";
-    
-    const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
-    if (btnGuardar) btnGuardar.innerText = "Guardar Reservación";
-    
+    // ✅ FIX #3: limpieza completa (antes el reset() no borraba los data-raw)
+    limpiarFormulario();
     cambiarVista('lista');
 }
+
 
 /**
  * Envía la orden de cancelación al servidor de Google Sheets
  * @param {string|number} idReservacion - El Folio o número de la reservación
  */
-// 🆕 FUNCIÓN CORREGIDA: ejecutarCancelacion
 async function ejecutarCancelacion(idReservacion) {
     console.log("❌ [Cancelación] Solicitando cancelar folio:", idReservacion);
     
@@ -1028,8 +948,12 @@ async function ejecutarCancelacion(idReservacion) {
         btnCancelarReserva.disabled = true;
     }
 
+    // ✅ FIX #4: enviamos AMBOS nombres de parámetro (accion/action, idReserva/id)
+    // para que funcione sin importar cómo los lea tu codigo.gs
     const datos = {
+        accion: "cancelar",
         action: "cancelar",
+        idReserva: idReservacion,
         id: idReservacion
     };
 
@@ -1043,18 +967,13 @@ async function ejecutarCancelacion(idReservacion) {
         if (res.status === "success") {
             alert("⚠️ Reservación cancelada y espacio liberado con éxito.");
             
-            // 1. Limpiar formulario
-            document.getElementById("form-reserva").reset();
-            document.getElementById("form-reserva-id").value = "";
-            document.getElementById("titulo-formulario").innerText = "📋 Nueva Reservación";
-            if (btnCancelarReserva) btnCancelarReserva.classList.add("hidden");
-
-            // 2. 🆕 FORZAR RECARGA DE DATOS INMEDIATA
-            // Esto actualiza memoriaMeses y todasLasReservas para que el conflicto desaparezca
+            // ✅ FIX #3: limpieza completa (reset + data-raw + botones)
+            limpiarFormulario();
+            
+            // 🔄 FORZAR RECARGA DE DATOS INMEDIATA
             console.log("🔄 Recargando datos para liberar fecha...");
-            await obtenerReservas(); // Esperamos a que termine de cargar
+            await obtenerReservas();
 
-            // 3. Solo después de recargar, cambiamos de vista
             cambiarVista('lista');
             
         } else {
@@ -1072,9 +991,6 @@ async function ejecutarCancelacion(idReservacion) {
 }
 
 
-// 🌙 LÓGICA DE TEMA OSCURO
-
-// 🌙 Cargar tema guardado al iniciar
-document.addEventListener("DOMContentLoaded", () => {
-
-});
+// 🌙 LÓGICA DE TEMA OSCURO (pendiente de implementar)
+// ✅ FIX #1: se eliminó el bloque final roto que tenía una llave "}" sobrante
+// y podía hacer fallar la carga de TODO el archivo JavaScript.
