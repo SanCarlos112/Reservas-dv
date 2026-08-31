@@ -910,9 +910,32 @@ function abrirModalModificar(identificador) {
     mapeoFechas.forEach(campo => {
         const elemento = document.getElementById(campo.idHtml);
         if (elemento) {
-            elemento.value = campo.propiedadJson ? String(campo.propiedadJson).substring(0, 10) : "";
+            let valorBruto = reserva[campo.propiedadJson];
+            
+            // Función auxiliar para formatear fechas a YYYY-MM-DD
+            function formatearFechaParaInput(fechaStr) {
+                if (!fechaStr) return "";
+                // Si ya es string YYYY-MM-DD (lo ideal)
+                if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                    return fechaStr;
+                }
+                // Si viene como objeto Date (raro si doGet usa formatDateISO, pero por seguridad)
+                if (fechaStr instanceof Date) {
+                    return fechaStr.toISOString().split('T')[0];
+                }
+                // Si viene como string de otro formato (ej. dd/mm/yyyy o texto de Google)
+                // Intentamos extraer el primer patrón de 4 dígitos, 2 dígitos, 2 dígitos
+                const match = fechaStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+                if (match) {
+                    return match[1] + "-" + match[2] + "-" + match[3];
+                }
+                return ""; // Si no se puede entender, dejar vacío
+            }
+
+            elemento.value = formatearFechaParaInput(valorBruto);
         }
-    });
+    });    
+
 
     // 5. 🚨 Botón rojo de CANCELACIÓN (aparece solo en modo edición)
     const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
