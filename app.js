@@ -898,7 +898,7 @@ function abrirModalModificar(identificador) {
     });
 
 
-    // 4c. Fechas (CORREGIDO PARA MANEJAR FORMATOS VARIADOS)
+    // 4c. Fechas (VERSIÓN CON DEPURACIÓN COMPLETA)
     const mapeoFechas = [
         { idHtml: "Fecha_Llegada", propiedadJson: "Fecha_Llegada" },
         { idHtml: "Fecha_Salida", propiedadJson: "Fecha_Salida" },
@@ -908,21 +908,43 @@ function abrirModalModificar(identificador) {
         { idHtml: "Fecha_Comision", propiedadJson: "Fecha_Comision" }
     ];
 
+    // 🔍 DEPURACIÓN COMPLETA: Ver TODOS los datos de la reserva
+    console.log("🔍 [DEBUG] TODOS los datos de la reserva:", JSON.stringify(reserva, null, 2));
+
     mapeoFechas.forEach(campo => {
         const elemento = document.getElementById(campo.idHtml);
         if (elemento) {
             let valorBruto = reserva[campo.propiedadJson];
             
+            // 🔍 DEPURACIÓN DETALLADA POR CAMPO
+            console.log(`📅 [DEBUG] Campo ${campo.idHtml}:`);
+            console.log(`  - Buscando en propiedad: "${campo.propiedadJson}"`);
+            console.log(`  - Valor encontrado:`, valorBruto);
+            console.log(`  - Tipo de dato:`, typeof valorBruto);
+            console.log(`  - ¿Es undefined?`, valorBruto === undefined);
+            console.log(`  - ¿Es null?`, valorBruto === null);
+            console.log(`  - ¿Es string vacío?`, valorBruto === "");
+            
+            // Si no encontramos el valor en la propiedad esperada, buscar en otras posibles
+            if (valorBruto === undefined || valorBruto === null || valorBruto === "") {
+                console.log(`  ⚠️ [DEBUG] ¡Campo NO encontrado! Buscando en propiedades similares...`);
+                
+                // Buscar en todas las propiedades del objeto reserva que contengan el nombre del campo
+                Object.keys(reserva).forEach(key => {
+                    if (key.toLowerCase().includes(campo.idHtml.toLowerCase().replace("fecha_", ""))) {
+                        console.log(`    🔎 Propiedad alternativa encontrada: "${key}" =`, reserva[key]);
+                    }
+                });
+            }
+            
             // Función auxiliar para formatear fechas a YYYY-MM-DD
             function formatearFechaParaInput(fechaStr) {
                 if (!fechaStr) return "";
                 
-                // Si ya es string YYYY-MM-DD (formato ISO que devuelve doGet)
                 if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
                     return fechaStr;
                 }
                 
-                // Si viene como número (timestamp)
                 if (typeof fechaStr === 'number') {
                     const date = new Date(fechaStr);
                     if (!isNaN(date.getTime())) {
@@ -931,7 +953,6 @@ function abrirModalModificar(identificador) {
                     return "";
                 }
                 
-                // Si viene como objeto Date
                 if (fechaStr instanceof Date) {
                     if (!isNaN(fechaStr.getTime())) {
                         return fechaStr.toISOString().split('T')[0];
@@ -939,7 +960,6 @@ function abrirModalModificar(identificador) {
                     return "";
                 }
                 
-                // Si es un string en otro formato, intentamos extraer YYYY-MM-DD
                 if (typeof fechaStr === 'string') {
                     const match = fechaStr.match(/(\d{4})-(\d{2})-(\d{2})/);
                     if (match) {
@@ -947,13 +967,13 @@ function abrirModalModificar(identificador) {
                     }
                 }
                 
-                // Si no se puede entender, dejar vacío
                 return "";
             }
 
             elemento.value = formatearFechaParaInput(valorBruto);
         }
     });
+
     
     // 5. 🚨 Botón rojo de CANCELACIÓN (aparece solo en modo edición)
     const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
