@@ -899,14 +899,14 @@ function abrirModalModificar(identificador) {
 
     // 4c. Fechas (se cortan a AAAA-MM-DD para el input type="date")
     const mapeoFechas = [
-        { idHtml: "Fecha_Llegada", propiedadJson: reserva.Fecha_Llegada },
-        { idHtml: "Fecha_Salida", propiedadJson: reserva.Fecha_Salida },
-        { idHtml: "Fecha_Anticipo", propiedadJson: reserva.Fecha_Anticipo },
-        { idHtml: "Fecha_Pago", propiedadJson: reserva.Fecha_Pago_Liq || reserva.Fecha_Pago || reserva.Fecha_Pago_Liquidacion },
-        { idHtml: "Fecha_Limpieza", propiedadJson: reserva.Fecha_Limpieza },
-        { idHtml: "Fecha_Comision", propiedadJson: reserva.Fecha_Comision }
+        { idHtml: "Fecha_Llegada", propiedadJson: "Fecha_Llegada" },
+        { idHtml: "Fecha_Salida", propiedadJson: "Fecha_Salida" },
+        { idHtml: "Fecha_Anticipo", propiedadJson: "Fecha_Anticipo" },
+        { idHtml: "Fecha_Pago", propiedadJson: "Fecha_Pago_Liq" }, // Nota: el JSON usa Fecha_Pago_Liq
+        { idHtml: "Fecha_Limpieza", propiedadJson: "Fecha_Limpieza" },
+        { idHtml: "Fecha_Comision", propiedadJson: "Fecha_Comision" }
     ];
-
+    
     mapeoFechas.forEach(campo => {
         const elemento = document.getElementById(campo.idHtml);
         if (elemento) {
