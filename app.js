@@ -426,14 +426,25 @@ function filtrarYRenderizarReservas() {
         return tA - tB;
     });
 
+    // 4. Renderizar
     contenedor.innerHTML = "";
     if (reservasFiltradas.length === 0) {
         contenedor.innerHTML = `<p style="color:#6b7280; text-align:center; padding:20px; font-weight:500;">📋 No se encontraron reservaciones para este criterio.</p>`;
         return;
     }
 
-    reservasFiltradas.forEach(r => {
+    // 🎨 PALETA DE COLORES PARA TARJETAS (misma familia de tonos que el calendario)
+    const PALETA_TARJETAS = [
+        { fondo: "#e0f2fe", borde: "#7dd3fc", nombre: "#0369a1" }, // Azul
+        { fondo: "#dcfce7", borde: "#86efac", nombre: #15803d" }, // Verde
+        { fondo: "#f3e8ff", borde: "#d8b4fe", nombre: "#6b21a8" }, // Morado
+        { fondo: "#ffedd5", borde: "#fdba74", nombre: "#c2410c" }, // Naranja
+        { fondo: "#fce7f3", borde: "#f9a8d4", nombre: "#be185d" }  // Rosa
+    ];
+
+    reservasFiltradas.forEach((r, indice) => {
         const card = document.createElement("div");
+        const color = PALETA_TARJETAS[indice % PALETA_TARJETAS.length]; // 🎨 rota entre los 5 colores
         
         const total = parseFloat(r.Total_Reserva) || 0;
         const anticipo = parseFloat(r.Anticipo) || 0;
@@ -456,17 +467,18 @@ function filtrarYRenderizarReservas() {
             return `${partes[2]}-${partes[1]}-${partes[0]}`;
         };
 
+        // 🎨 La tarjeta toma el color de la paleta (fondo suave + borde acento)
         card.innerHTML = `
-            <div style="background-color:#ffffff; padding:16px; border-radius:16px; border:1px solid #f3f4f6; box-shadow:0 1px 3px rgba(0,0,0,0.05); margin-bottom:12px;">
+            <div style="background-color:${color.fondo}; padding:16px; border-radius:16px; border:1px solid ${color.borde}; box-shadow:0 1px 3px rgba(0,0,0,0.05); margin-bottom:12px;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px;">
                     <div style="flex:1;">
-                        <h4 style="font-weight:bold; color:#1f2937; margin:0; font-size:15px;">${r.Nombre_Completo}</h4>
-                        <p style="font-size:11px; color:#9ca3af; margin:2px 0 0 0;">📱 ${r.Telefono || "Sin teléfono"}</p>
+                        <h4 style="font-weight:bold; color:${color.nombre}; margin:0; font-size:15px;">${r.Nombre_Completo}</h4>
+                        <p style="font-size:11px; color:#6b7280; margin:2px 0 0 0;">📱 ${r.Telefono || "Sin teléfono"}</p>
                     </div>
                     <div>${etiquetaSaldo}</div>
                 </div>
                 
-                <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #f9fafb; border-bottom:1px solid #f9fafb; font-size:12px; color:#4b5563; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid ${color.borde}; border-bottom:1px solid ${color.borde}; font-size:12px; color:#4b5563; margin-bottom:8px;">
                     <div>🛫 <b>Llegada:</b><br>${formatearA_Español(r.Fecha_Llegada)}</div>
                     <div>🛬 <b>Salida:</b><br>${formatearA_Español(r.Fecha_Salida)}</div>
                 </div>
