@@ -897,16 +897,17 @@ function abrirModalModificar(identificador) {
         el.setAttribute('data-raw', valor);
     });
 
-    // 4c. Fechas (se cortan a AAAA-MM-DD para el input type="date")
+
+    // 4c. Fechas (CORREGIDO PARA MANEJAR FORMATOS VARIADOS)
     const mapeoFechas = [
         { idHtml: "Fecha_Llegada", propiedadJson: "Fecha_Llegada" },
         { idHtml: "Fecha_Salida", propiedadJson: "Fecha_Salida" },
         { idHtml: "Fecha_Anticipo", propiedadJson: "Fecha_Anticipo" },
-        { idHtml: "Fecha_Pago", propiedadJson: "Fecha_Pago_Liq" }, // Nota: el JSON usa Fecha_Pago_Liq
+        { idHtml: "Fecha_Pago", propiedadJson: "Fecha_Pago_Liq" },
         { idHtml: "Fecha_Limpieza", propiedadJson: "Fecha_Limpieza" },
         { idHtml: "Fecha_Comision", propiedadJson: "Fecha_Comision" }
     ];
-    
+
     mapeoFechas.forEach(campo => {
         const elemento = document.getElementById(campo.idHtml);
         if (elemento) {
@@ -915,28 +916,45 @@ function abrirModalModificar(identificador) {
             // Función auxiliar para formatear fechas a YYYY-MM-DD
             function formatearFechaParaInput(fechaStr) {
                 if (!fechaStr) return "";
-                // Si ya es string YYYY-MM-DD (lo ideal)
-                if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                
+                // Si ya es string YYYY-MM-DD (formato ISO que devuelve doGet)
+                if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
                     return fechaStr;
                 }
-                // Si viene como objeto Date (raro si doGet usa formatDateISO, pero por seguridad)
+                
+                // Si viene como número (timestamp)
+                if (typeof fechaStr === 'number') {
+                    const date = new Date(fechaStr);
+                    if (!isNaN(date.getTime())) {
+                        return date.toISOString().split('T')[0];
+                    }
+                    return "";
+                }
+                
+                // Si viene como objeto Date
                 if (fechaStr instanceof Date) {
-                    return fechaStr.toISOString().split('T')[0];
+                    if (!isNaN(fechaStr.getTime())) {
+                        return fechaStr.toISOString().split('T')[0];
+                    }
+                    return "";
                 }
-                // Si viene como string de otro formato (ej. dd/mm/yyyy o texto de Google)
-                // Intentamos extraer el primer patrón de 4 dígitos, 2 dígitos, 2 dígitos
-                const match = fechaStr.match(/(\d{4})-(\d{2})-(\d{2})/);
-                if (match) {
-                    return match[1] + "-" + match[2] + "-" + match[3];
+                
+                // Si es un string en otro formato, intentamos extraer YYYY-MM-DD
+                if (typeof fechaStr === 'string') {
+                    const match = fechaStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        return match[1] + "-" + match[2] + "-" + match[3];
+                    }
                 }
-                return ""; // Si no se puede entender, dejar vacío
+                
+                // Si no se puede entender, dejar vacío
+                return "";
             }
 
             elemento.value = formatearFechaParaInput(valorBruto);
         }
-    });    
-
-
+    });
+    
     // 5. 🚨 Botón rojo de CANCELACIÓN (aparece solo en modo edición)
     const btnCancelarReserva = document.getElementById("btn-cancelar-reserva");
     if (btnCancelarReserva) {
