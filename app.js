@@ -549,17 +549,9 @@ async function guardarReserva(event) {
         "Observaciones": document.getElementById("Observaciones")?.value || ""
     };
 
-    // ✅ FIX #4: enviamos AMBOS nombres de acción (accion / action) y de ID (idReserva / id)
-    // para máxima compatibilidad con el backend. El parámetro que tu codigo.gs NO use,
-    // simplemente será ignorado. Así funciona sin importar cómo lo tenga implementado.
+    // ✅ El backend decide solo: si lleva idReserva EDITA, si no, CREA
     if (idReserva) {
         datos["idReserva"] = idReserva;
-        datos["id"] = idReserva;
-        datos["accion"] = "editar";
-        datos["action"] = "editar";
-    } else {
-        datos["accion"] = "crear";
-        datos["action"] = "crear";
     }
 
     const btn = event.target.querySelector("button[type='submit']");
@@ -948,15 +940,12 @@ async function ejecutarCancelacion(idReservacion) {
         btnCancelarReserva.disabled = true;
     }
 
-    // ✅ FIX #4: enviamos AMBOS nombres de parámetro (accion/action, idReserva/id)
-    // para que funcione sin importar cómo los lea tu codigo.gs
+    // ✅ Solo action + id (SIN idReserva, o el backend lo trataría como edición)
     const datos = {
-        accion: "cancelar",
         action: "cancelar",
-        idReserva: idReservacion,
         id: idReservacion
     };
-
+    
     try {
         const r = await fetch(WEB_APP_URL, { 
             method: "POST", 
