@@ -436,7 +436,7 @@ function filtrarYRenderizarReservas() {
     // 🎨 PALETA DE COLORES PARA TARJETAS (misma familia de tonos que el calendario)
     const PALETA_TARJETAS = [
         { fondo: "#e0f2fe", borde: "#7dd3fc", nombre: "#0369a1" }, // Azul
-        { fondo: "#dcfce7", borde: "#86efac", nombre: #15803d" }, // Verde
+        { fondo: "#dcfce7", borde: "#86efac", nombre: "#15803d" }, // Verde
         { fondo: "#f3e8ff", borde: "#d8b4fe", nombre: "#6b21a8" }, // Morado
         { fondo: "#ffedd5", borde: "#fdba74", nombre: "#c2410c" }, // Naranja
         { fondo: "#fce7f3", borde: "#f9a8d4", nombre: "#be185d" }  // Rosa
