@@ -847,7 +847,7 @@ function abrirModalModificar(identificador) {
 
     // 2. Texto del botón de envío principal
     const btnGuardar = document.querySelector("#form-reserva button[type='submit']");
-    if (btnGuardar) btnGuardar.innerText = "Guardar Cambios en la Reserva";
+    if (btnGuardar) btnGuardar.innerText = "Guardar Cambios Reservación";
 
     // 3. Guardamos el ID en el campo oculto para que el sistema sepa que es una EDICIÓN
     document.getElementById("form-reserva-id").value = reserva.Num_Reservacion || reserva.id || "";
