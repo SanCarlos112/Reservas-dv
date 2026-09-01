@@ -568,7 +568,7 @@ async function guardarReserva(event) {
 
     const btn = event.target.querySelector("button[type='submit']");
     const textoOriginal = btn.innerText;
-    btn.innerText = idReserva ? "Actualizando Excel..." : "Guardando..."; 
+    btn.innerText = idReserva ? "Actualizando DBs..." : "Guardando..."; 
     btn.disabled = true;
 
     try {
